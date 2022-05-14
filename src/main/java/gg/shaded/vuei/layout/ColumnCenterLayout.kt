@@ -8,17 +8,25 @@ import rx.Observable
 import java.lang.Integer.max
 
 class ColumnCenterLayout: Layout {
-    override fun allocate(element: Element, parent: Renderable): Observable<Renderable> {
+    override fun allocate(context: LayoutContext): Observable<List<Renderable>> {
         val container = SimpleRenderable(
-            width = parent.width,
+            width = context.parent.width,
             height = 0,
-            element = element
+            element = context.element
         )
 
-        return element.children.allocate(container)
+        return context.element.children.allocate(
+            SimpleLayoutContext(
+                context.element,
+                container,
+                context.bindings,
+                context.components,
+                context.slots
+            )
+        )
             .map { children ->
                 val used = children.sumOf { it.height }
-                val start = max(0, parent.height / 2 - used / 2)
+                val start = max(0, context.parent.height / 2 - used / 2)
                 var lastY = start
 
                 val childrenLayout = children.map { child ->
@@ -40,9 +48,9 @@ class ColumnCenterLayout: Layout {
                 SimpleRenderable(
                     width = container.width,
                     height = height,
-                    element = element,
+                    element = context.element,
                     children = childrenLayout
-                )
+                ).toList()
             }
     }
 }

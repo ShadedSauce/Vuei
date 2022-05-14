@@ -1,12 +1,10 @@
 import gg.shaded.vuei.DequeParserContext
 import gg.shaded.vuei.HtmlLanguage
 import gg.shaded.vuei.ItemFactory
-import gg.shaded.vuei.util.ItemBuilder
 import org.bukkit.Material
-import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
-import org.junit.Assert
-import org.junit.Test
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
 
 class HtmlLanguageTest {
     @Test
@@ -22,19 +20,19 @@ class HtmlLanguageTest {
                     <g />
                 </d>
             </a>
-        """.trimIndent(), mapOf())
+        """.trimIndent())
 
         val document = language.parse(context)
 
-        Assert.assertEquals(document.count(), 1)
+        Assertions.assertEquals(document.count(), 1)
 
         val children = document.first().children
 
-        Assert.assertEquals(children.count(), 3)
+        Assertions.assertEquals(children.count(), 3)
 
-        Assert.assertEquals(children[0].children.count(), 0)
-        Assert.assertEquals(children[1].children.count(), 0)
-        Assert.assertEquals(children[2].children.count(), 3)
+        Assertions.assertEquals(children[0].children.count(), 0)
+        Assertions.assertEquals(children[1].children.count(), 0)
+        Assertions.assertEquals(children[2].children.count(), 3)
     }
 }
 

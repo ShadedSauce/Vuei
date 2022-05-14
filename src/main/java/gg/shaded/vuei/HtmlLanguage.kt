@@ -2,9 +2,10 @@ package gg.shaded.vuei
 
 import gg.shaded.vuei.layout.*
 import rx.Observable
+import rx.subjects.ReplaySubject
 
 class HtmlLanguage(
-    private val itemFactory: ItemFactory
+    private val itemFactory: ItemFactory,
 ): Parser<List<Element>> {
     override fun parse(context: ParserContext): List<Element> {
         val elements = ArrayList<Element>()
@@ -29,7 +30,8 @@ class HtmlLanguage(
         var scope = context
         var loop: For? = null
         val tag = context.readUntil { !it.isLetter() && it != '-' }
-        val bindings = HashMap<String, Observable<out Any>>()
+        val bindings = HashMap<String, String>()
+        val values = HashMap<String, String>()
         val children = ArrayList<Element>()
 
         if(tag.isNullOrBlank()) {
@@ -39,7 +41,7 @@ class HtmlLanguage(
         scope.skipWhitespace()
 
         while(context.peek()?.isLetterOrDigit() == true || scope.peek() == ':') {
-            val attribute = parseAttribute(scope, bindings)
+            val attribute = parseAttribute(scope, bindings, values)
 
             scope = attribute.context
 
@@ -54,7 +56,6 @@ class HtmlLanguage(
             scope.expect(">")
         }
         else {
-            println("scanning children")
             scope.expect(">")
             scope.skipWhitespace()
             children.addAll(parse(scope))
@@ -72,13 +73,13 @@ class HtmlLanguage(
 
         val layout = ForLayout(IfLayout(DerivedLayout(tag, itemFactory)))
 
-        println("loop: $loop")
-        return SimpleElement(children, layout, bindings, loop)
+        return SimpleElement(children, layout, bindings, values, loop)
     }
 
     private fun parseAttribute(
         context: ParserContext,
-        bindings: MutableMap<String, Observable<out Any>>
+        bindings: MutableMap<String, String>,
+        values: MutableMap<String, String>
     ): AttributeResult {
         var scope = context
         var loop: For? = null
@@ -96,21 +97,14 @@ class HtmlLanguage(
 
         if(attribute == "for") {
             loop = parseFor(scope)
-
-            scope = context.scope(
-                mapOf(
-                    loop.variable to loop.reference,
-                )
-            )
-
-            bindings["for"] = scope.getBinding(loop.binding)
         }
         else {
-            val value = scope.readUntil { it == '"' }?.takeIf { it.isNotBlank() }
+            val value = scope.readUntil { it == '"' }
+                ?.takeIf { it.isNotBlank() }
                 ?: throw scope.createSyntaxError("Expected attribute value")
 
-            bindings[attribute] = if(binding) scope.getBinding(value)
-            else Observable.just(value)
+            if(binding) bindings[attribute] = value
+            else values[attribute] = value
         }
 
         scope.read() // "
@@ -132,11 +126,7 @@ class HtmlLanguage(
             ?.takeIf { it.isNotBlank() }
             ?: throw context.createSyntaxError("Expected for binding name")
 
-        return For(
-            binding,
-            variable,
-            reference = context.getBinding(binding)
-        )
+        return For(binding, variable)
     }
 }
 

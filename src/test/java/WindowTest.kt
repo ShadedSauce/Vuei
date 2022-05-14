@@ -40,8 +40,8 @@ import org.bukkit.scoreboard.Scoreboard
 import org.bukkit.util.BoundingBox
 import org.bukkit.util.RayTraceResult
 import org.bukkit.util.Vector
-import org.junit.Assert
-import org.junit.Test
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
 import rx.Observable
 import rx.Scheduler
 import rx.schedulers.Schedulers
@@ -54,12 +54,10 @@ import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
-import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
-import kotlin.concurrent.thread
 
 class WindowTest {
-    @Test
+//    @Test
     fun testWindow() {
         val inventoryProvider = TestInventoryProvider()
         val player = TestPlayer()
@@ -75,7 +73,7 @@ class WindowTest {
         )
 
         window.callback = {
-            Assert.assertNotNull(player.currentInventory)
+            Assertions.assertNotNull(player.currentInventory)
 
             println(player.currentInventory!!.title)
             val rows = player.currentInventory!!.size / 9
@@ -83,6 +81,8 @@ class WindowTest {
             for(i in 0 until rows) {
                 println(player.currentInventory!!.items.toList().subList(i * 9, i * 9 + 9))
             }
+
+            println("---")
         }
 
         window.show(player)
@@ -365,7 +365,6 @@ class TestInventory(
     }
 
     override fun setItem(p0: Int, p1: ItemStack?) {
-        println("Setting item")
         items[p0] = p1
     }
 
@@ -2102,7 +2101,6 @@ class TestPlayer: Player {
     override fun isAllowingServerListings(): Boolean {
         TODO("Not yet implemented")
     }
-
 }
 
 class TestComponent: Component {
@@ -2110,15 +2108,26 @@ class TestComponent: Component {
         <window :title="title">
             <padding a="1">
                 <row-sb>
-                    <icon :for="material in types" :type="material" />
+                    <child>
+                        <template slot="top">
+                            <icon type="DIRT" />
+                        </template>
+                    
+                        <icon type="DIAMOND" />
+                    </child>
                 </row-sb>
             </padding>
         </window>
     """.trimIndent(), TestItemFactory())
 
+    override val imports = mapOf(
+        "child" to Child()
+    )
+
     override fun setup(): Map<String, Observable<out Any>> {
         val title = Observable.interval(0, 1, TimeUnit.SECONDS)
             .map { "Title $it" }
+            .doOnSubscribe { println("subbed: title: ${System.currentTimeMillis()}") }
 
         val onClick = ReplaySubject.create<ClickContext>()
             .doOnNext { println("clicked") }
@@ -2131,14 +2140,65 @@ class TestComponent: Component {
 
         val test = Observable.just("DIAMOND")
 
-        println("should not be $test")
-
         return mapOf(
             "title" to title,
             "click" to onClick,
-            "types" to types,
-            "visible" to visible
         )
+    }
+
+    class Child: Component {
+        override val template = HtmlTemplate("""
+            <col-c>
+                <row-c>
+                    <slot name="top" />
+                </row-c>
+            
+                <row-sb>
+                    <icon :for="material in types" :type="material" />
+                    <slot />
+                </row-sb>
+            </col-c>
+        """.trimIndent(), TestItemFactory())
+
+        override val imports = mapOf(
+            "grand-child" to GrandChild()
+        )
+
+        override fun setup(): Map<String, Observable<out Any>> {
+            val title = Observable.interval(0, 1, TimeUnit.SECONDS)
+                .map { "Title $it" }
+
+            val onClick = ReplaySubject.create<ClickContext>()
+                .doOnNext { println("clicked") }
+
+            val types = Observable.interval(0, 1, TimeUnit.SECONDS)
+                .map { (0..(2 + it % 2)).map { Material.values().random().name } }
+                .doOnSubscribe { println("subbed types: ${System.currentTimeMillis()}") }
+
+            val visible = Observable.interval(0, 1, TimeUnit.SECONDS)
+                .map { it % 2L == 0L }
+
+            val test = Observable.just("DIAMOND")
+
+            return mapOf(
+                "title" to title,
+                "click" to onClick,
+                "types" to types,
+                "visible" to visible
+            )
+        }
+    }
+
+    class GrandChild: Component {
+        override val template = HtmlTemplate("""
+            <icon type="DIAMOND" />
+        """.trimIndent(), TestItemFactory())
+
+        override fun setup(): Map<String, Observable<out Any>> {
+            return mapOf(
+                "type" to Observable.just("DIAMOND")
+            )
+        }
     }
 }
 
@@ -2157,11 +2217,15 @@ class TestWindow(
     scheduler,
     root,
 ) {
+    override var renderable: Renderable?
+        get() = super.renderable
+        set(value) {
+            super.renderable = value
+
+            if(value != null) {
+                callback?.invoke(value)
+            }
+        }
+
     var callback: ((Renderable) -> Unit)? = null
-
-    override fun redraw(renderable: Renderable) {
-        super.redraw(renderable)
-
-        callback?.invoke(renderable)
-    }
 }

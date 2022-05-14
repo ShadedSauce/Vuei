@@ -29,17 +29,12 @@ interface ParserContext {
     fun skipWhitespace()
 
     fun createSyntaxError(reason: String): Throwable
-
-    fun getBinding(name: String): Observable<out Any>
-
-    fun scope(bindings: Map<String, Observable<out Any>>): ParserContext
 }
 
 class SyntaxError(message: String): RuntimeException(message)
 
 class DequeParserContext(
     private val body: String,
-    private val bindings: Map<String, Observable<out Any>>,
     private val deque: ArrayDeque<Char> = ArrayDeque(body.toCharArray().toList()),
     private var index: Int = 0
 ): ParserContext {
@@ -110,17 +105,6 @@ class DequeParserContext(
         val near = body.substring(max(0, index - 1)..min(index + 10, body.length - 1))
             .replace("\n", "")
 
-        println(deque)
         return SyntaxError("Syntax error near '${near}'. Reason: ${reason}.")
-    }
-
-    override fun getBinding(name: String): Observable<out Any> {
-        return bindings[name] ?: throw IllegalStateException("Binding not found: $name.")
-    }
-
-    override fun scope(bindings: Map<String, Observable<out Any>>): ParserContext {
-        return DequeParserContext(
-            body, this.bindings.plus(bindings), deque, index
-        )
     }
 }

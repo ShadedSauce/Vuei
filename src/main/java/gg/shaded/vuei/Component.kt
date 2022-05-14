@@ -1,10 +1,14 @@
 package gg.shaded.vuei
 
 import rx.Observable
-import rx.subjects.Subject
 
 interface Component {
     val template: Template
 
-    fun setup(): Map<String, Observable<out Any>>
+    val imports: Map<String, Component>
+        get() = HashMap()
+
+    fun setup(): Map<String, Observable<out Any>> {
+        return HashMap()
+    }
 }

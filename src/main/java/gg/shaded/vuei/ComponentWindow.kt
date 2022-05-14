@@ -1,5 +1,6 @@
 package gg.shaded.vuei
 
+import gg.shaded.vuei.layout.SimpleLayoutContext
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -17,6 +18,7 @@ import org.bukkit.plugin.PluginManager
 import rx.Scheduler
 import rx.Subscription
 import rx.schedulers.Schedulers
+import java.util.concurrent.TimeUnit
 
 open class ComponentWindow(
     private val plugin: Plugin,
@@ -24,16 +26,20 @@ open class ComponentWindow(
     private val inventoryProvider: InventoryProvider,
     private val renderer: Renderer,
     private val scheduler: Scheduler = Schedulers.from { r -> Bukkit.getScheduler().runTask(plugin, r) },
-    root: Component
+    private val root: Component
 ): Window, Listener {
-    private var document: Element = root.template.getElement(root.setup())
+    private var document: Element = root.template.element
 
-    private var renderable: Renderable? = null
+    protected open var renderable: Renderable? = null
         set(value) {
             field = value
 
             if(value != null) {
+                renderer.render(value)
+
+                ignoreClose = true
                 viewers.forEach { it.openInventory(inventory) }
+                ignoreClose = false
             }
         }
 
@@ -65,29 +71,23 @@ open class ComponentWindow(
     }
 
     private fun start() {
-         subscription = document.layout.allocate(
-            document,
-            SimpleRenderable(
-                width = 9,
-                height = 6,
-                element = document
+        subscription = document.layout.allocate(
+            SimpleLayoutContext(
+                document,
+                SimpleRenderable(
+                    width = 9,
+                    height = 6,
+                    element = document
+                ),
+                root.setup(),
+                root.imports,
+                slots = HashMap()
             )
         )
-            .doOnNext { renderable -> this.renderable = renderable }
+            .debounce(100, TimeUnit.MILLISECONDS) // 1 tick
+            .map { it.first() }
             .observeOn(scheduler)
-            .subscribe(this::redraw)
-    }
-
-    protected open fun redraw(renderable: Renderable) {
-        val oldInventory = this.inventory
-
-        renderer.render(renderable)
-
-        if(oldInventory != this.inventory) {
-            ignoreClose = true
-            viewers.forEach { it.openInventory(this.inventory) }
-            ignoreClose = false
-        }
+            .subscribe { renderable -> this.renderable = renderable }
     }
 
     private fun triggerClick(

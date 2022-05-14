@@ -7,14 +7,22 @@ import gg.shaded.vuei.allocate
 import rx.Observable
 
 class RowSpaceBetweenLayout: Layout {
-    override fun allocate(element: Element, parent: Renderable): Observable<Renderable> {
+    override fun allocate(context: LayoutContext): Observable<List<Renderable>> {
         val container = SimpleRenderable(
-            width = parent.width,
+            width = context.parent.width,
             height = 0,
-            element = element
+            element = context.element
         )
 
-        return element.children.allocate(container)
+        return context.element.children.allocate(
+            SimpleLayoutContext(
+                context.element,
+                container,
+                context.bindings,
+                context.components,
+                context.slots
+            )
+        )
             .map { children ->
                 val used = children.sumOf { it.width }
                 val free = container.width - used
@@ -41,9 +49,9 @@ class RowSpaceBetweenLayout: Layout {
                 SimpleRenderable(
                     width = container.width,
                     height = height,
-                    element = element,
+                    element = context.element,
                     children = childrenLayout
-                )
+                ).toList()
             }
     }
 }

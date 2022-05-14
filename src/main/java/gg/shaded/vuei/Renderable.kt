@@ -17,6 +17,8 @@ interface Renderable {
         y: Int,
         context: ClickContext,
     ): Boolean
+
+    fun toList(): List<Renderable> = listOf(this)
 }
 
 data class SimpleRenderable(

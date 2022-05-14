@@ -16,13 +16,15 @@ class DerivedLayout(
         "row-c" to RowCenterLayout(),
         "col-c" to ColumnCenterLayout(),
         "icon" to IconLayout(itemFactory),
-        "padding" to PaddingLayout()
+        "padding" to PaddingLayout(),
+        "slot" to SlotLayout(),
+        "template" to TemplateLayout()
     )
 
-    override fun allocate(element: Element, parent: Renderable): Observable<Renderable> {
+    override fun allocate(context: LayoutContext): Observable<List<Renderable>> {
         val layout =
-            layouts[this.layout] ?: throw IllegalArgumentException("${this.layout} has no layout.")
+            layouts[this.layout] ?: CustomComponentLayout(this.layout)
 
-        return layout.allocate(element, parent)
+        return layout.allocate(context)
     }
 }

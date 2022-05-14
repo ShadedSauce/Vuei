@@ -8,17 +8,25 @@ import rx.Observable
 import kotlin.math.max
 
 class RowCenterLayout: Layout {
-    override fun allocate(element: Element, parent: Renderable): Observable<Renderable> {
+    override fun allocate(context: LayoutContext): Observable<List<Renderable>> {
         val container = SimpleRenderable(
-            width = parent.width,
+            width = context.parent.width,
             height = 0,
-            element = element
+            element = context.element
         )
 
-        return element.children.allocate(container)
+        return context.element.children.allocate(
+            SimpleLayoutContext(
+                context.element,
+                container,
+                context.bindings,
+                context.components,
+                context.slots
+            )
+        )
             .map { children ->
                 val used = children.sumOf { it.width }
-                val start = max(0, parent.width / 2 - used / 2)
+                val start = max(0, context.parent.width / 2 - used / 2)
                 var lastX = start
 
                 val childrenLayout = children.map { child ->
@@ -40,9 +48,9 @@ class RowCenterLayout: Layout {
                 SimpleRenderable(
                     width = container.width,
                     height = height,
-                    element = element,
+                    element = context.element,
                     children = childrenLayout
-                )
+                ).toList()
             }
     }
 }
