@@ -11,6 +11,7 @@ interface Renderable {
     val children: List<Renderable>
     val item: ItemStack?
     val title: String?
+    val onClick: ((ClickContext) -> Unit)?
 
     fun click(
         x: Int,
@@ -29,7 +30,8 @@ data class SimpleRenderable(
     override val element: Element,
     override val children: List<Renderable> = ArrayList(),
     override val item: ItemStack? = null,
-    override val title: String? = null
+    override val title: String? = null,
+    override val onClick: ((ClickContext) -> Unit)? = null,
 ): Renderable {
     override fun click(
         x: Int,
@@ -56,7 +58,8 @@ data class SimpleRenderable(
             }
 
         if(!consumed) {
-            element.onClick(context)
+            println("has onclick? $onClick, $item")
+            onClick?.invoke(context)
             return true
         }
 

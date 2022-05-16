@@ -1,3 +1,5 @@
+package gg.shaded.vuei
+
 import gg.shaded.vuei.*
 import org.bukkit.*
 import org.bukkit.advancement.Advancement
@@ -20,7 +22,11 @@ import org.bukkit.event.Event
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntityDamageEvent
+import org.bukkit.event.inventory.ClickType
+import org.bukkit.event.inventory.InventoryAction
+import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryType
+import org.bukkit.event.inventory.InventoryType.SlotType
 import org.bukkit.event.player.PlayerTeleportEvent
 import org.bukkit.generator.BiomeProvider
 import org.bukkit.generator.ChunkGenerator
@@ -40,55 +46,16 @@ import org.bukkit.scoreboard.Scoreboard
 import org.bukkit.util.BoundingBox
 import org.bukkit.util.RayTraceResult
 import org.bukkit.util.Vector
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Test
-import rx.Observable
 import rx.Scheduler
-import rx.Single
 import rx.schedulers.Schedulers
-import rx.subjects.ReplaySubject
-import rx.subjects.Subject
 import java.io.File
 import java.io.InputStream
 import java.net.InetSocketAddress
 import java.util.*
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.Executor
 import java.util.logging.Logger
+import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
-
-class WindowTest {
-    fun testWindow() {
-        val inventoryProvider = TestInventoryProvider()
-        val player = TestPlayer()
-        val executor = Executors.newSingleThreadExecutor()
-
-        val window = TestWindow(
-            TestPlugin(),
-            TestPluginManager(),
-            inventoryProvider,
-            InventoryRenderer(inventoryProvider),
-            Schedulers.from(executor),
-            TestComponent()
-        )
-
-        window.callback = {
-            Assertions.assertNotNull(player.currentInventory)
-
-            println(player.currentInventory!!.title)
-            val rows = player.currentInventory!!.size / 9
-
-            for(i in 0 until rows) {
-                println(player.currentInventory!!.items.toList().subList(i * 9, i * 9 + 9))
-            }
-
-            println("---")
-        }
-
-        window.show(player)
-        executor.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS)
-    }
-}
 
 class TestPlugin: Plugin {
     override fun onTabComplete(
@@ -227,11 +194,20 @@ class TestPluginManager: PluginManager {
         TODO("Not yet implemented")
     }
 
-    override fun callEvent(p0: Event) {
-        TODO("Not yet implemented")
+    override fun callEvent(event: Event) {
+        listeners.forEach { listener ->
+            listener.javaClass.methods
+                .filter { it.parameterTypes.firstOrNull() == event.javaClass }
+                .onEach { println("found match: $it") }
+                .forEach { it.invoke(listener, event) }
+        }
     }
 
-    override fun registerEvents(p0: Listener, p1: Plugin) { }
+    private val listeners = ArrayList<Listener>()
+
+    override fun registerEvents(listener: Listener, p1: Plugin) {
+        listeners.add(listener)
+    }
 
     override fun registerEvent(
         p0: Class<out Event>,
@@ -377,7 +353,10 @@ class TestInventory(
     }
 
     override fun getContents(): Array<ItemStack> {
-        TODO("Not yet implemented")
+        return items.map {
+            it ?: TestItemStack(Material.AIR)
+        }
+            .toTypedArray()
     }
 
     override fun setContents(p0: Array<out ItemStack>) {
@@ -2103,112 +2082,39 @@ class TestPlayer: Player {
     }
 }
 
-class TestComponent: Component {
-    override val template = HtmlTemplate("""
-        <window :title="title">
-            <padding a="1">
-                <row-sb>
-                    <child>
-                        <template slot="top">
-                            <icon type="DIRT" />
-                        </template>
-                    
-                        <icon type="DIAMOND" />
-                    </child>
-                </row-sb>
-            </padding>
-        </window>
-    """.trimIndent(), TestItemFactory())
-
-    override val imports = mapOf(
-        "child" to Child()
-    )
-
-    override fun setup(context: SetupContext): Observable<Map<String, Observable<out Any>>> {
-        val title = Observable.interval(0, 1, TimeUnit.SECONDS)
-            .map { "Title $it" }
-            .doOnSubscribe { println("subbed: title: ${System.currentTimeMillis()}") }
-
-        val onClick = ReplaySubject.create<ClickContext>()
-            .doOnNext { println("clicked") }
-
-        val types = Observable.interval(0, 1, TimeUnit.SECONDS)
-            .map { (0..(2 + it % 2)).map { Material.values().random().name } }
-
-        val visible = Observable.interval(0, 1, TimeUnit.SECONDS)
-            .map { it % 2L == 0L }
-
-        val test = Observable.just("DIAMOND")
-
-        return mapOf(
-            "title" to title,
-            "click" to onClick,
-        ).sync()
+class TestInventoryView(
+    private val inventory: Inventory,
+    private val player: Player
+): InventoryView() {
+    override fun getTopInventory(): Inventory {
+        return inventory
     }
 
-    class Child: Component {
-        override val template = HtmlTemplate("""
-            <col-c>
-                <row-c>
-                    <slot name="top" />
-                </row-c>
-            
-                <row-sb>
-                    <icon :for="material in types" :type="material" />
-                    <slot />
-                </row-sb>
-            </col-c>
-        """.trimIndent(), TestItemFactory())
-
-        override val imports = mapOf(
-            "grand-child" to GrandChild()
-        )
-
-        override fun setup(context: SetupContext): Observable<Map<String, Observable<out Any>>> {
-            val title = Observable.interval(0, 1, TimeUnit.SECONDS)
-                .map { "Title $it" }
-
-            val onClick = ReplaySubject.create<ClickContext>()
-                .doOnNext { println("clicked") }
-
-            val types = Observable.interval(0, 1, TimeUnit.SECONDS)
-                .map { (0..(2 + it % 2)).map { Material.values().random().name } }
-                .doOnSubscribe { println("subbed types: ${System.currentTimeMillis()}") }
-
-            val visible = Observable.interval(0, 1, TimeUnit.SECONDS)
-                .map { it % 2L == 0L }
-
-            val test = Observable.just("DIAMOND")
-
-            return mapOf(
-                "title" to title,
-                "click" to onClick,
-                "types" to types,
-                "visible" to visible
-            ).sync()
-        }
+    override fun getBottomInventory(): Inventory {
+        return inventory
     }
 
-    class GrandChild: Component {
-        override val template = HtmlTemplate("""
-            <icon type="DIAMOND" />
-        """.trimIndent(), TestItemFactory())
+    override fun getPlayer(): HumanEntity {
+        return player
+    }
 
-        override fun setup(context: SetupContext): Observable<Map<String, Observable<out Any>>> {
-            return mapOf(
-                "type" to Observable.just("DIAMOND")
-            ).sync()
-        }
+    override fun getType(): InventoryType {
+        return InventoryType.CHEST
+    }
+
+    override fun getTitle(): String {
+        TODO("Not yet implemented")
     }
 }
 
 class TestWindow(
-    plugin: Plugin,
-    pluginManager: PluginManager,
-    inventoryProvider: InventoryProvider,
-    renderer: Renderer,
+    plugin: Plugin = TestPlugin(),
+    private val pluginManager: PluginManager = TestPluginManager(),
+    inventoryProvider: InventoryProvider = TestInventoryProvider(),
+    renderer: Renderer = InventoryRenderer(inventoryProvider),
     scheduler: Scheduler,
     root: Component,
+    private val callback: ((TestWindow, Inventory, Renderable) -> Unit)? = null
 ): ComponentWindow(
     plugin,
     pluginManager,
@@ -2223,9 +2129,39 @@ class TestWindow(
             super.renderable = value
 
             if(value != null) {
-                callback?.invoke(value)
+                callback?.invoke(this, inventory, value)
             }
         }
 
-    var callback: ((Renderable) -> Unit)? = null
+    public override val inventory: Inventory
+        get() = super.inventory
+
+    fun click(player: Player, slot: Int) {
+        pluginManager.callEvent(
+            InventoryClickEvent(
+                TestInventoryView(inventory, player),
+                SlotType.CONTAINER,
+                slot,
+                ClickType.LEFT,
+                InventoryAction.NOTHING
+            )
+        )
+    }
+
+    fun awaitRedraw() {
+        val old = this.renderable
+
+        while(this.renderable == old) {
+            Thread.sleep(50) // 1 tick
+        }
+    }
+
+    override fun toString(): String {
+        return (0 until (this.renderable?.height ?: 0))
+            .joinToString("\n") { y ->
+                inventory.contents.toList()
+                    .subList(y * 9, y * 9 + 9)
+                    .toString()
+            }
+    }
 }

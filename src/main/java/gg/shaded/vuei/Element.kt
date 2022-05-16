@@ -15,26 +15,18 @@ interface Element {
 
     val bindings: Map<String, String>
 
-    val values: Map<String, String>
+    val values: Map<String, Any>
 
     val loop: For?
-
-    fun onClick(context: ClickContext)
 }
 
 class SimpleElement(
     override val children: List<Element>,
     override val layout: Layout,
     override val bindings: Map<String, String>,
-    override val values: Map<String, String>,
+    override val values: Map<String, Any>,
     override val loop: For?,
-): Element {
-    override fun onClick(context: ClickContext) {
-        val handler = bindings["click"] as? Subject<Any, Any>
-
-        handler?.onNext(context)
-    }
-}
+): Element
 
 fun List<Element>.allocate(
     context: LayoutContext,

@@ -10,7 +10,10 @@ class IfLayout(
         val condition = context.getBinding("if") as? Observable<Boolean>
             ?: Observable.just(true)
 
+        println("resubbing")
         return condition.switchMap { visible ->
+            println("if became: $visible")
+
             if(visible) layout.allocate(context)
             else Observable.just(ArrayList())
         }

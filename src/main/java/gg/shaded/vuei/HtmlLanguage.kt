@@ -31,7 +31,7 @@ class HtmlLanguage(
         var loop: For? = null
         val tag = context.readUntil { !it.isLetter() && it != '-' }
         val bindings = HashMap<String, String>()
-        val values = HashMap<String, String>()
+        val values = HashMap<String, Any>()
         val children = ArrayList<Element>()
 
         if(tag.isNullOrBlank()) {
@@ -71,7 +71,13 @@ class HtmlLanguage(
 
         scope.skipWhitespace()
 
-        val layout = ForLayout(IfLayout(DerivedLayout(tag, itemFactory)))
+        val layout = ClickableLayout(
+            ForLayout(
+                IfLayout(
+                    DerivedLayout(tag, itemFactory)
+                )
+            )
+        )
 
         return SimpleElement(children, layout, bindings, values, loop)
     }
@@ -79,9 +85,9 @@ class HtmlLanguage(
     private fun parseAttribute(
         context: ParserContext,
         bindings: MutableMap<String, String>,
-        values: MutableMap<String, String>
+        values: MutableMap<String, Any>
     ): AttributeResult {
-        var scope = context
+        val scope = context
         var loop: For? = null
         val binding = scope.peek() == ':'
 
@@ -99,18 +105,52 @@ class HtmlLanguage(
             loop = parseFor(scope)
         }
         else {
-            val value = scope.readUntil { it == '"' }
-                ?.takeIf { it.isNotBlank() }
-                ?: throw scope.createSyntaxError("Expected attribute value")
+            if(scope.peek() == '[') {
+                if(binding) {
+                    throw context.createSyntaxError("Binding cannot be array.")
+                }
 
-            if(binding) bindings[attribute] = value
-            else values[attribute] = value
+                values[attribute] = parseArray(context)
+            }
+            else {
+                val value = scope.readUntil { it == '"' }
+                    ?.takeIf { it.isNotBlank() }
+                    ?: throw scope.createSyntaxError("Expected attribute value")
+
+                if(binding) bindings[attribute] = value
+                else values[attribute] = value
+            }
         }
 
         scope.read() // "
         scope.skipWhitespace()
 
         return AttributeResult(scope, loop)
+    }
+
+    private fun parseArray(context: ParserContext): List<String> {
+        val array = ArrayList<String>()
+
+        context.expect("[")
+        context.skipWhitespace()
+
+        while(context.peek() == '\'') {
+            context.expect("'")
+            val value = context.readUntil { it == '\'' }
+                ?: throw context.createSyntaxError("Expected array value.")
+            context.expect("'")
+
+            if(context.peek() == ',') {
+                context.expect(",")
+                context.skipWhitespace()
+            }
+
+            array.add(value)
+        }
+
+        context.skipWhitespace()
+        context.expect("]")
+        return array
     }
 
     private fun parseFor(context: ParserContext): For {

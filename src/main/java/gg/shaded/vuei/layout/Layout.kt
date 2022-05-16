@@ -22,18 +22,15 @@ interface LayoutContext {
     val slots: Map<String, List<Element>>
 
     fun getBinding(key: String): Observable<out Any>? {
-        val existing = bindings[key]
-
-        if(existing != null) {
-            return existing
-        }
-
         val binding = element.bindings[key]
-            ?: return element.values[key]?.let { Observable.just(it).doOnSubscribe { if(key == "type") println("subbed: value ${System.currentTimeMillis()}") } }
 
-        return bindings.getOrElse(binding) {
-            throw IllegalStateException("No binding found for: $binding")
+        if(binding != null) {
+            println("binding2: ${bindings[binding]}")
+            return bindings[binding]
+                ?: throw IllegalStateException("No binding found for $key=$binding.")
         }
+
+        return element.values[key]?.let { Observable.just(it) }
     }
 }
 

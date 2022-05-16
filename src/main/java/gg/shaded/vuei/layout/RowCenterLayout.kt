@@ -36,7 +36,8 @@ class RowCenterLayout: Layout {
                         height = child.height,
                         element = child.element,
                         item = child.item,
-                        children = child.children
+                        children = child.children,
+                        onClick = child.onClick
                     )
 
                     lastX = renderable.x + renderable.width

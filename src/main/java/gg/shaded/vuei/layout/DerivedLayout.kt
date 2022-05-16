@@ -12,9 +12,11 @@ class DerivedLayout(
 ): Layout {
     private val layouts = mapOf(
         "window" to DocumentLayout(),
+        "span" to SpanLayout(),
         "row-sb" to RowSpaceBetweenLayout(),
         "row-c" to RowCenterLayout(),
         "col-c" to ColumnCenterLayout(),
+        "col-s" to ColumnStartLayout(),
         "icon" to IconLayout(itemFactory),
         "padding" to PaddingLayout(),
         "slot" to SlotLayout(),

@@ -16,12 +16,25 @@ class IconLayout(
         val type = context.getBinding("type") as? Observable<String>
             ?: throw IllegalStateException("Icon has no type.")
 
+        val name = context.getBinding("name") as? Observable<String>
+            ?: Observable.just("")
+
+        val description = context.getBinding("description") as? Observable<List<String>>
+            ?: Observable.just(ArrayList())
+
         if(type.first().toBlocking().first() == "DIAMOND") {
             println("allocating")
         }
 
-        return type.map { name ->
-            val item = itemFactory.create(name, "", listOf())
+        return Observable.combineLatest(
+            type, name, description
+        )
+        { t, n, d ->
+            val item = itemFactory.create(
+                t,
+                n.takeIf { it.isNotEmpty() },
+                d.takeIf { it.isNotEmpty() }
+            )
 
             SimpleRenderable(
                 x = 0,

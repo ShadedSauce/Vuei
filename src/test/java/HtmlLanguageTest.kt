@@ -1,56 +1,57 @@
 import gg.shaded.vuei.DequeParserContext
 import gg.shaded.vuei.HtmlLanguage
 import gg.shaded.vuei.ItemFactory
+import gg.shaded.vuei.TestItemFactory
 import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class HtmlLanguageTest {
     @Test
-    fun testParser() {
+    fun testAttributes() {
         val language = HtmlLanguage(TestItemFactory())
         val context = DequeParserContext("""
-            <a attr="value123">
-                <b />
-                <c />
-                <d>
-                    <e />
-                    <f />
-                    <g />
-                </d>
-            </a>
+            <a some-attr="some value" some-other-attr="some other value" />
         """.trimIndent())
 
-        val document = language.parse(context)
+        val document = language.parse(context).first()
 
-        Assertions.assertEquals(document.count(), 1)
-
-        val children = document.first().children
-
-        Assertions.assertEquals(children.count(), 3)
-
-        Assertions.assertEquals(children[0].children.count(), 0)
-        Assertions.assertEquals(children[1].children.count(), 0)
-        Assertions.assertEquals(children[2].children.count(), 3)
-    }
-}
-
-class TestItemFactory: ItemFactory {
-    override fun create(type: String, name: String, description: List<String>): ItemStack {
-        val material = Material.matchMaterial(type)
-            ?: throw IllegalStateException("$type is not a Material.")
-
-        return TestItemStack(material)
-    }
-}
-
-class TestItemStack(private val material: Material): ItemStack(material) {
-    override fun toString(): String {
-        return "{type=$material}"
+        assertEquals(document.values["some-attr"], "some value")
+        assertEquals(document.values["some-other-attr"], "some other value")
     }
 
-    override fun isSimilar(stack: ItemStack?): Boolean {
-        return false
+    @Test
+    fun testArrays() {
+        val language = HtmlLanguage(TestItemFactory())
+        val context = DequeParserContext("""
+            <tag array="['some value', 'some other value']" />
+        """.trimIndent())
+
+        val document = language.parse(context).first()
+        val array = document.values["array"] as? List<String>
+
+        assertNotNull(array)
+        assertEquals(array, listOf("some value", "some other value"))
+    }
+
+    @Test
+    fun testNesting() {
+        val language = HtmlLanguage(TestItemFactory())
+        val context = DequeParserContext("""
+            <parent>
+                <child>
+                    <grand-child />
+                    <grand-child />
+                    <grand-child />
+                </child>
+            </parent>
+        """.trimIndent())
+
+        val document = language.parse(context).first()
+
+        assertEquals(document.children.count(), 1)
+        assertEquals(document.children.first().children.count(), 3)
+        assertEquals(document.children.first().children.flatMap { it.children }.count(), 0)
     }
 }

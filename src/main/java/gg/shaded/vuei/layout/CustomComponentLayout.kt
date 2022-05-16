@@ -1,6 +1,7 @@
 package gg.shaded.vuei.layout
 
 import gg.shaded.vuei.Renderable
+import gg.shaded.vuei.SimpleSetupContext
 import rx.Observable
 import java.lang.IllegalStateException
 
@@ -17,18 +18,28 @@ class CustomComponentLayout(
         }
 
         val namedSlots = context.element.children.filter {
-            it.values.containsKey("slot")
+            it.values["slot"] as? String != null
         }
-            .associate { it.values["slot"]!! to it.children }
+            .associate { it.values["slot"] as String to it.children }
 
-        return element.layout.allocate(
-            SimpleLayoutContext(
-                element,
-                context.parent,
-                component.setup(),
-                component.imports,
-                namedSlots.plus("default" to defaultSlot)
+        val props = context.element.bindings
+            .mapValues { entry -> context.getBinding(entry.key) }
+            .filterValues { it != null }
+            .mapValues { it.value!! }
+            .plus(
+                context.element.values.mapValues { Observable.just(it.value) }
             )
-        )
+
+        return component.setup(SimpleSetupContext(props))
+            .map { bindings ->
+                SimpleLayoutContext(
+                    element,
+                    context.parent,
+                    bindings,
+                    component.imports,
+                    namedSlots.plus("default" to defaultSlot)
+                )
+            }
+            .switchMap { ctx -> element.layout.allocate(ctx) }
     }
 }

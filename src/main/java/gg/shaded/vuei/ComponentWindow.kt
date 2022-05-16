@@ -22,9 +22,9 @@ import java.util.concurrent.TimeUnit
 
 open class ComponentWindow(
     private val plugin: Plugin,
-    pluginManager: PluginManager,
-    private val inventoryProvider: InventoryProvider,
-    private val renderer: Renderer,
+    pluginManager: PluginManager = Bukkit.getPluginManager(),
+    private val inventoryProvider: InventoryProvider = CachedInventoryProvider(),
+    private val renderer: Renderer = InventoryRenderer(inventoryProvider),
     private val scheduler: Scheduler = Schedulers.from { r -> Bukkit.getScheduler().runTask(plugin, r) },
     private val root: Component
 ): Window, Listener {
@@ -43,7 +43,7 @@ open class ComponentWindow(
             }
         }
 
-    private val inventory: Inventory
+    protected open val inventory: Inventory
         get() {
             val layout = this.renderable ?: throw IllegalStateException("Layout is not defined.")
 
@@ -71,22 +71,29 @@ open class ComponentWindow(
     }
 
     private fun start() {
-        subscription = document.layout.allocate(
-            SimpleLayoutContext(
-                document,
-                SimpleRenderable(
-                    width = 9,
-                    height = 6,
-                    element = document
-                ),
-                root.setup(),
-                root.imports,
-                slots = HashMap()
-            )
-        )
-            .debounce(100, TimeUnit.MILLISECONDS) // 1 tick
+        subscription = root.setup(SimpleSetupContext(HashMap()))
+            .switchMap { bindings ->
+                println("done with setup: $bindings")
+                document.layout.allocate(
+                    SimpleLayoutContext(
+                        document,
+                        SimpleRenderable(
+                            width = 9,
+                            height = 6,
+                            element = document
+                        ),
+                        bindings,
+                        root.imports,
+                        slots =
+                        HashMap()
+                    )
+                )
+                    .doOnNext { println("got renderable $it") }
+            }
+            .debounce(50, TimeUnit.MILLISECONDS) // 1 tick
             .map { it.first() }
             .observeOn(scheduler)
+            .doOnNext { println("got renderable2 $it") }
             .subscribe { renderable -> this.renderable = renderable }
     }
 
@@ -104,18 +111,22 @@ open class ComponentWindow(
         val layout = this.renderable ?: return
 
         if(slot < 0) {
+            println("neg slot")
             return
         }
 
         if(view.topInventory != inventory) {
+            println("not inv")
             return
         }
 
         if(clickedInventory != inventory) {
+            println("clicked doesn't match")
             if(isShiftClick) {
                 slot = inventory.first(currentItem ?: ItemStack(Material.AIR))
                     .let { if(it == -1) inventory.firstEmpty() else it }
             } else {
+                println("returning")
                 return
             }
         }
@@ -140,7 +151,7 @@ open class ComponentWindow(
         layout.click(x, y, context)
     }
 
-    private fun dispose() {
+    protected open fun dispose() {
         subscription?.unsubscribe()
     }
 
