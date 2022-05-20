@@ -4,7 +4,7 @@ import gg.shaded.vuei.Element
 import gg.shaded.vuei.ItemFactory
 import gg.shaded.vuei.Renderable
 import gg.shaded.vuei.layout.ColumnCenterLayout
-import rx.Observable
+import io.reactivex.rxjava3.core.Observable
 
 class DerivedLayout(
     private val layout: String,
@@ -20,7 +20,9 @@ class DerivedLayout(
         "icon" to IconLayout(itemFactory),
         "padding" to PaddingLayout(),
         "slot" to SlotLayout(),
-        "template" to TemplateLayout()
+        "template" to TemplateLayout(),
+        "wrap" to WrapLayout(),
+        "sized-box" to SizedBoxLayout()
     )
 
     override fun allocate(context: LayoutContext): Observable<List<Renderable>> {

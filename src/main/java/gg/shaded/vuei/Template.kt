@@ -1,6 +1,6 @@
 package gg.shaded.vuei
 
-import rx.Observable
+import io.reactivex.rxjava3.core.Observable
 
 interface Template {
     val element: Element

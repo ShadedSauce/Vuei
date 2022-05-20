@@ -1,6 +1,10 @@
 package gg.shaded.vuei
 
 import gg.shaded.vuei.layout.SimpleLayoutContext
+import io.reactivex.rxjava3.core.Completable
+import io.reactivex.rxjava3.core.Scheduler
+import io.reactivex.rxjava3.disposables.Disposable
+import io.reactivex.rxjava3.schedulers.Schedulers
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -15,10 +19,9 @@ import org.bukkit.inventory.InventoryView
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.PluginManager
-import rx.Scheduler
-import rx.Subscription
-import rx.schedulers.Schedulers
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 
 open class ComponentWindow(
     private val plugin: Plugin,
@@ -52,8 +55,19 @@ open class ComponentWindow(
 
     private val viewers = ArrayList<Player>()
 
-    private var subscription: Subscription? = null
+    private var subscription: Disposable? = null
     private var ignoreClose: Boolean = false
+
+    private val contextScheduler = Schedulers.from(
+        Executors.newSingleThreadExecutor { r ->
+            thread(
+                contextClassLoader = ClassLoader.getSystemClassLoader(),
+                start = false
+            ) {
+                r.run()
+            }
+        }
+    )
 
     init {
         pluginManager.registerEvents(this, plugin)
@@ -73,7 +87,6 @@ open class ComponentWindow(
     private fun start() {
         subscription = root.setup(SimpleSetupContext(HashMap()))
             .switchMap { bindings ->
-                println("done with setup: $bindings")
                 document.layout.allocate(
                     SimpleLayoutContext(
                         document,
@@ -84,16 +97,18 @@ open class ComponentWindow(
                         ),
                         bindings,
                         root.imports,
-                        slots =
-                        HashMap()
+                        slots = HashMap()
                     )
                 )
-                    .doOnNext { println("got renderable $it") }
             }
-            .debounce(50, TimeUnit.MILLISECONDS) // 1 tick
+            .debounce(50, TimeUnit.MILLISECONDS, contextScheduler) // 1 tick
             .map { it.first() }
             .observeOn(scheduler)
-            .doOnNext { println("got renderable2 $it") }
+            .doOnError { println("erroring") }
+            .doOnDispose { println("disposing") }
+            .doOnNext { println("height: ${it.height}, ${System.currentTimeMillis()}") }
+            .subscribeOn(contextScheduler)
+            // TODO: Send error to error handler
             .subscribe { renderable -> this.renderable = renderable }
     }
 
@@ -148,11 +163,13 @@ open class ComponentWindow(
 
         cancellable.isCancelled = true
 
-        layout.click(x, y, context)
+        Completable.fromAction { layout.click(x, y, context) }
+            .subscribeOn(contextScheduler)
+            .subscribe() // TODO: Send to error handler
     }
 
     protected open fun dispose() {
-        subscription?.unsubscribe()
+        subscription?.dispose()
     }
 
     @EventHandler

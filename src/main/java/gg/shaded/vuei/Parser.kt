@@ -1,6 +1,6 @@
 package gg.shaded.vuei
 
-import rx.Observable
+import io.reactivex.rxjava3.core.Observable
 import java.lang.IllegalStateException
 import kotlin.math.max
 import kotlin.math.min

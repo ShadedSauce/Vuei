@@ -1,13 +1,13 @@
 package gg.shaded.vuei.layout
 
 import gg.shaded.vuei.Renderable
-import rx.Observable
+import io.reactivex.rxjava3.core.Observable
 
 class IfLayout(
     private val layout: Layout
 ): Layout {
     override fun allocate(context: LayoutContext): Observable<List<Renderable>> {
-        val condition = context.getBinding("if") as? Observable<Boolean>
+        val condition = context.getAttributeBinding("if")?.observe() as? Observable<Boolean>
             ?: Observable.just(true)
 
         println("resubbing")

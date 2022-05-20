@@ -46,8 +46,7 @@ import org.bukkit.scoreboard.Scoreboard
 import org.bukkit.util.BoundingBox
 import org.bukkit.util.RayTraceResult
 import org.bukkit.util.Vector
-import rx.Scheduler
-import rx.schedulers.Schedulers
+import io.reactivex.rxjava3.core.Scheduler
 import java.io.File
 import java.io.InputStream
 import java.net.InetSocketAddress

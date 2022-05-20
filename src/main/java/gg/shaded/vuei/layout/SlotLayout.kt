@@ -2,7 +2,7 @@ package gg.shaded.vuei.layout
 
 import gg.shaded.vuei.Renderable
 import gg.shaded.vuei.allocate
-import rx.Observable
+import io.reactivex.rxjava3.core.Observable
 
 class SlotLayout: Layout {
     override fun allocate(context: LayoutContext): Observable<List<Renderable>> {

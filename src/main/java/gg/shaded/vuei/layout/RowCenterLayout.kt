@@ -4,7 +4,7 @@ import gg.shaded.vuei.Element
 import gg.shaded.vuei.Renderable
 import gg.shaded.vuei.SimpleRenderable
 import gg.shaded.vuei.allocate
-import rx.Observable
+import io.reactivex.rxjava3.core.Observable
 import kotlin.math.max
 
 class RowCenterLayout: Layout {

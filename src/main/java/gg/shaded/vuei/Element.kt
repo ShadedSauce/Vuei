@@ -4,9 +4,7 @@ import gg.shaded.vuei.layout.For
 import gg.shaded.vuei.layout.Layout
 import gg.shaded.vuei.layout.LayoutContext
 import gg.shaded.vuei.layout.SimpleLayoutContext
-import rx.Observable
-import rx.subjects.Subject
-import java.lang.IllegalStateException
+import io.reactivex.rxjava3.core.Observable
 
 interface Element {
     val children: List<Element>

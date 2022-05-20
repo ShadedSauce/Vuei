@@ -42,12 +42,11 @@ import org.bukkit.util.RayTraceResult
 import org.bukkit.util.Vector
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import rx.Observable
-import rx.Scheduler
-import rx.Single
-import rx.schedulers.Schedulers
-import rx.subjects.ReplaySubject
-import rx.subjects.Subject
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.core.Scheduler
+import io.reactivex.rxjava3.core.Single
+import io.reactivex.rxjava3.schedulers.Schedulers
+import io.reactivex.rxjava3.subjects.ReplaySubject
 import java.io.File
 import java.io.InputStream
 import java.net.InetSocketAddress
@@ -2124,7 +2123,7 @@ class TestComponent: Component {
         "child" to Child()
     )
 
-    override fun setup(context: SetupContext): Observable<Map<String, Observable<out Any>>> {
+    override fun setup(context: SetupContext): Observable<Map<String, Any>> {
         val title = Observable.interval(0, 1, TimeUnit.SECONDS)
             .map { "Title $it" }
             .doOnSubscribe { println("subbed: title: ${System.currentTimeMillis()}") }
@@ -2164,7 +2163,7 @@ class TestComponent: Component {
             "grand-child" to GrandChild()
         )
 
-        override fun setup(context: SetupContext): Observable<Map<String, Observable<out Any>>> {
+        override fun setup(context: SetupContext): Observable<Map<String, Any>> {
             val title = Observable.interval(0, 1, TimeUnit.SECONDS)
                 .map { "Title $it" }
 
@@ -2194,7 +2193,7 @@ class TestComponent: Component {
             <icon type="DIAMOND" />
         """.trimIndent(), TestItemFactory())
 
-        override fun setup(context: SetupContext): Observable<Map<String, Observable<out Any>>> {
+        override fun setup(context: SetupContext): Observable<Map<String, Any>> {
             return mapOf(
                 "type" to Observable.just("DIAMOND")
             ).sync()

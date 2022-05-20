@@ -1,9 +1,7 @@
 package gg.shaded.vuei.layout
 
 import gg.shaded.vuei.*
-import rx.Observable
-import rx.subjects.ReplaySubject
-import rx.subjects.Subject
+import io.reactivex.rxjava3.core.Observable
 
 class ForLayout(
     private val layout: Layout
@@ -11,15 +9,20 @@ class ForLayout(
     override fun allocate(context: LayoutContext): Observable<List<Renderable>> {
         val loop = context.element.loop ?: return layout.allocate(context)
 
-        return context.getBinding(loop.binding)
+        println("loop: $loop")
+        return context.getBinding(loop.binding)?.observe()
             ?.switchMap { bindings ->
+                if((bindings as Iterable<Any>).toList().isEmpty()) {
+                    return@switchMap Observable.just(listOf())
+                }
+
                 Observable.combineLatest(
-                    (bindings as Iterable<Any>).map { binding ->
+                    bindings.map { binding ->
                         layout.allocate(
                             SimpleLayoutContext(
                                 context.element,
                                 context.parent,
-                                mapOf(loop.variable to Observable.just(binding)),
+                                context.bindings.plus(mapOf(loop.variable to binding)),
                                 context.components,
                                 context.slots
                             )

@@ -2,7 +2,7 @@ package gg.shaded.vuei.layout
 
 import gg.shaded.vuei.Renderable
 import gg.shaded.vuei.SimpleSetupContext
-import rx.Observable
+import io.reactivex.rxjava3.core.Observable
 import java.lang.IllegalStateException
 
 class CustomComponentLayout(
@@ -23,7 +23,7 @@ class CustomComponentLayout(
             .associate { it.values["slot"] as String to it.children }
 
         val props = context.element.bindings
-            .mapValues { entry -> context.getBinding(entry.key) }
+            .mapValues { entry -> context.getAttributeBinding(entry.key) }
             .filterValues { it != null }
             .mapValues { it.value!! }
             .plus(
@@ -35,7 +35,7 @@ class CustomComponentLayout(
                 SimpleLayoutContext(
                     element,
                     context.parent,
-                    bindings,
+                    bindings.plus(props),
                     component.imports,
                     namedSlots.plus("default" to defaultSlot)
                 )

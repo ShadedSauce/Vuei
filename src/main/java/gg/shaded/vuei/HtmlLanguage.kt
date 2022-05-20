@@ -1,8 +1,6 @@
 package gg.shaded.vuei
 
 import gg.shaded.vuei.layout.*
-import rx.Observable
-import rx.subjects.ReplaySubject
 
 class HtmlLanguage(
     private val itemFactory: ItemFactory,
@@ -71,9 +69,9 @@ class HtmlLanguage(
 
         scope.skipWhitespace()
 
-        val layout = ClickableLayout(
-            ForLayout(
-                IfLayout(
+        val layout = ForLayout(
+            IfLayout(
+                ClickableLayout(
                     DerivedLayout(tag, itemFactory)
                 )
             )

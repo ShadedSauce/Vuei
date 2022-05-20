@@ -1,11 +1,11 @@
 package gg.shaded.vuei.layout
 
 import gg.shaded.vuei.*
-import rx.Observable
+import io.reactivex.rxjava3.core.Observable
 
 class DocumentLayout: Layout {
     override fun allocate(context: LayoutContext): Observable<List<Renderable>> {
-        val title = context.getBinding("title") as? Observable<String>
+        val title = context.getAttributeBinding("title") as? Observable<String>
             ?: Observable.just("Untitled")
 
         return Observable.combineLatest(
@@ -14,6 +14,7 @@ class DocumentLayout: Layout {
         )
         { t, children ->
             val height = children.maxOfOrNull { it.height + it.y } ?: 0
+            println("new children")
 
             SimpleRenderable(
                 width = context.parent.width,

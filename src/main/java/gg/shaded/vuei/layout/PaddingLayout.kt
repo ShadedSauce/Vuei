@@ -1,31 +1,30 @@
 package gg.shaded.vuei.layout
 
-import gg.shaded.vuei.Element
 import gg.shaded.vuei.Renderable
 import gg.shaded.vuei.SimpleRenderable
 import gg.shaded.vuei.allocate
-import rx.Observable
+import io.reactivex.rxjava3.core.Observable
 
 class PaddingLayout: Layout {
     override fun allocate(context: LayoutContext): Observable<List<Renderable>> {
-        val left = context.getBinding("l")
-            ?: context.getBinding("h")
-            ?: context.getBinding("a")
+        val left = context.getAttributeBinding("l")?.observe()
+            ?: context.getAttributeBinding("h")?.observe()
+            ?: context.getAttributeBinding("a")?.observe()
             ?: Observable.just(0)
 
-        val top = context.getBinding("t")
-            ?: context.getBinding("v")
-            ?: context.getBinding("a")
+        val top = context.getAttributeBinding("t")?.observe()
+            ?: context.getAttributeBinding("v")?.observe()
+            ?: context.getAttributeBinding("a")?.observe()
             ?: Observable.just(0)
 
-        val right = context.getBinding("r")
-            ?: context.getBinding("h")
-            ?: context.getBinding("a")
+        val right = context.getAttributeBinding("r")?.observe()
+            ?: context.getAttributeBinding("h")?.observe()
+            ?: context.getAttributeBinding("a")?.observe()
             ?: Observable.just(0)
 
-        val bottom = context.getBinding("b")
-            ?: context.getBinding("v")
-            ?: context.getBinding("a")
+        val bottom = context.getAttributeBinding("b")?.observe()
+            ?: context.getAttributeBinding("v")?.observe()
+            ?: context.getAttributeBinding("a")?.observe()
             ?: Observable.just(0)
 
         val container = SimpleRenderable(
@@ -67,7 +66,7 @@ class PaddingLayout: Layout {
                             width = container.width,
                             height = height + padding.b,
                             element = context.element,
-                            children = children
+                            children = children,
                         ).toList()
                     }
             }

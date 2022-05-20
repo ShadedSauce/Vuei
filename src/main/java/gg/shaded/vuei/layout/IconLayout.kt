@@ -1,40 +1,37 @@
 package gg.shaded.vuei.layout
 
-import gg.shaded.vuei.Element
 import gg.shaded.vuei.ItemFactory
 import gg.shaded.vuei.Renderable
 import gg.shaded.vuei.SimpleRenderable
-import gg.shaded.vuei.util.ItemBuilder
-import org.bukkit.Material
-import org.bukkit.inventory.ItemFlag
-import rx.Observable
+import io.reactivex.rxjava3.core.Observable
+import org.bukkit.inventory.ItemStack
 
 class IconLayout(
     private val itemFactory: ItemFactory
 ): Layout {
     override fun allocate(context: LayoutContext): Observable<List<Renderable>> {
-        val type = context.getBinding("type") as? Observable<String>
+        val type = context.getAttributeBinding("type")?.observe() as? Observable<Any>
             ?: throw IllegalStateException("Icon has no type.")
 
-        val name = context.getBinding("name") as? Observable<String>
+        val name = context.getAttributeBinding("name")?.observe() as? Observable<String>
             ?: Observable.just("")
 
-        val description = context.getBinding("description") as? Observable<List<String>>
+        val description = context.getAttributeBinding("description")?.observe() as? Observable<List<String>>
             ?: Observable.just(ArrayList())
-
-        if(type.first().toBlocking().first() == "DIAMOND") {
-            println("allocating")
-        }
 
         return Observable.combineLatest(
             type, name, description
         )
         { t, n, d ->
-            val item = itemFactory.create(
-                t,
-                n.takeIf { it.isNotEmpty() },
-                d.takeIf { it.isNotEmpty() }
-            )
+            val item = when(t) {
+                is ItemStack -> t
+                is String -> itemFactory.create(
+                    t,
+                    n.takeIf { it.isNotEmpty() },
+                    d.takeIf { it.isNotEmpty() }
+                )
+                else -> throw IllegalStateException("Icon type must be Material or ItemStack.")
+            }
 
             SimpleRenderable(
                 x = 0,
