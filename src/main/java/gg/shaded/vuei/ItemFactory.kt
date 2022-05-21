@@ -7,6 +7,8 @@ import org.bukkit.inventory.ItemStack
 
 interface ItemFactory {
     fun create(type: String, name: String?, description: List<String>?): ItemStack
+
+    fun create(item: ItemStack, name: String?, description: List<String>?): ItemStack
 }
 
 class ItemBuilderItemFactory: ItemFactory {
@@ -14,7 +16,11 @@ class ItemBuilderItemFactory: ItemFactory {
         val material = Material.matchMaterial(type)
             ?: throw IllegalStateException("$type is not a Material.")
 
-        return ItemBuilder.of(material)
+        return create(ItemStack(material), name, description)
+    }
+
+    override fun create(item: ItemStack, name: String?, description: List<String>?): ItemStack {
+        return ItemBuilder.modify(item)
             .flags(*ItemFlag.values())
             .also { builder ->
                 if(name != null) {
@@ -35,6 +41,10 @@ class TestItemFactory: ItemFactory {
             ?: throw IllegalStateException("$type is not a Material.")
 
         return TestItemStack(material)
+    }
+
+    override fun create(item: ItemStack, name: String?, description: List<String>?): ItemStack {
+        return item
     }
 }
 

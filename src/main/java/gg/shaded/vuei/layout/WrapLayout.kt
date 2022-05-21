@@ -13,19 +13,14 @@ class WrapLayout: Layout {
                 var y = 0
 
                 val wrapped = children.map { child ->
-                    SimpleRenderable(
+                    child.copy(
                         x = x,
                         y = y,
-                        width = child.width,
-                        height = child.height,
-                        element = child.element,
-                        children = child.children,
-                        item = child.item,
-                        onClick = child.onClick
                     ).also {
                         x += child.width
 
                         if(x >= context.parent.width) {
+                            x = 0
                             y++
                         }
                     }

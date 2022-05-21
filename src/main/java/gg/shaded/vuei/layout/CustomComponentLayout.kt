@@ -32,12 +32,12 @@ class CustomComponentLayout(
 
         return component.setup(SimpleSetupContext(props))
             .map { bindings ->
-                SimpleLayoutContext(
-                    element,
-                    context.parent,
-                    bindings.plus(props),
-                    component.imports,
-                    namedSlots.plus("default" to defaultSlot)
+                context.copy(
+                    superContext = context,
+                    element = element,
+                    bindings = bindings.plus(props),
+                    components = component.imports,
+                    slots = namedSlots.plus("default" to defaultSlot)
                 )
             }
             .switchMap { ctx -> element.layout.allocate(ctx) }

@@ -16,13 +16,7 @@ class RowCenterLayout: Layout {
         )
 
         return context.element.children.allocate(
-            SimpleLayoutContext(
-                context.element,
-                container,
-                context.bindings,
-                context.components,
-                context.slots
-            )
+            context.copy(parent = container)
         )
             .map { children ->
                 val used = children.sumOf { it.width }
@@ -30,18 +24,9 @@ class RowCenterLayout: Layout {
                 var lastX = start
 
                 val childrenLayout = children.map { child ->
-                    val renderable = SimpleRenderable(
-                        x = lastX,
-                        width = child.width,
-                        height = child.height,
-                        element = child.element,
-                        item = child.item,
-                        children = child.children,
-                        onClick = child.onClick
-                    )
-
-                    lastX = renderable.x + renderable.width
-                    return@map renderable
+                    child.copy(x = lastX).also {
+                        lastX = it.x + it.width
+                    }
                 }
 
                 val height = childrenLayout.maxOf { it.height + it.y }

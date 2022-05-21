@@ -1,6 +1,8 @@
 package gg.shaded.vuei
 
 import gg.shaded.vuei.layout.*
+import io.reactivex.rxjava3.core.Observable
+import org.graalvm.polyglot.Value
 
 class HtmlLanguage(
     private val itemFactory: ItemFactory,
@@ -103,21 +105,12 @@ class HtmlLanguage(
             loop = parseFor(scope)
         }
         else {
-            if(scope.peek() == '[') {
-                if(binding) {
-                    throw context.createSyntaxError("Binding cannot be array.")
-                }
+            val value = scope.readUntil { it == '"' }
+                ?.takeIf { it.isNotBlank() }
+                ?: throw scope.createSyntaxError("Expected attribute value")
 
-                values[attribute] = parseArray(context)
-            }
-            else {
-                val value = scope.readUntil { it == '"' }
-                    ?.takeIf { it.isNotBlank() }
-                    ?: throw scope.createSyntaxError("Expected attribute value")
-
-                if(binding) bindings[attribute] = value
-                else values[attribute] = value
-            }
+            if(binding) bindings[attribute] = value
+            else values[attribute] = value
         }
 
         scope.read() // "
@@ -172,3 +165,40 @@ data class AttributeResult(
     val context: ParserContext,
     val loop: For?
 )
+
+fun Any.invoke(vararg args: Any) = when(this) {
+    is Function1<*, *> -> (this as (Any) -> Any)(args.first())
+    is Function2<*, *, *> -> (this as (Any, Any) -> Any)(args[0], args[1])
+    is Value -> this.executeVoid(*args)
+    else -> throw IllegalStateException("Callback not callable.")
+}
+
+fun Any.unwrap(): Any? {
+    if(this is Value) {
+        if(this.isNull) {
+            return null
+        }
+
+        if(this.isHostObject) {
+            return this.asHostObject<Any>()
+        }
+
+        if(this.isNumber) {
+            return this.asInt()
+        }
+
+        if(this.isString) {
+            return this.asString()
+        }
+
+        if(this.hasArrayElements()) {
+            return this.`as`(List::class.java)
+        }
+    }
+
+    return this
+}
+
+fun Any.observe() = if(this is Observable<*>)
+    this.map { it.unwrap() ?: throw IllegalStateException("Expecting non null value.") }
+    else Observable.just(this.unwrap() ?: throw IllegalStateException("Expecting non null value."))

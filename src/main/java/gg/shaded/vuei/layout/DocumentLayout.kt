@@ -14,7 +14,6 @@ class DocumentLayout: Layout {
         )
         { t, children ->
             val height = children.maxOfOrNull { it.height + it.y } ?: 0
-            println("new children")
 
             SimpleRenderable(
                 width = context.parent.width,

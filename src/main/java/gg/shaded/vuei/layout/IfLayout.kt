@@ -1,6 +1,7 @@
 package gg.shaded.vuei.layout
 
 import gg.shaded.vuei.Renderable
+import gg.shaded.vuei.observe
 import io.reactivex.rxjava3.core.Observable
 
 class IfLayout(
@@ -10,12 +11,12 @@ class IfLayout(
         val condition = context.getAttributeBinding("if")?.observe() as? Observable<Boolean>
             ?: Observable.just(true)
 
-        println("resubbing")
-        return condition.switchMap { visible ->
-            println("if became: $visible")
-
-            if(visible) layout.allocate(context)
-            else Observable.just(ArrayList())
+        return Observable.combineLatest(
+            layout.allocate(context),
+            condition
+        ) { children, visible ->
+            if(visible) children
+            else ArrayList()
         }
     }
 }

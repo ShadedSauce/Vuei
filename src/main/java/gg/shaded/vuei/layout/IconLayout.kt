@@ -3,6 +3,7 @@ package gg.shaded.vuei.layout
 import gg.shaded.vuei.ItemFactory
 import gg.shaded.vuei.Renderable
 import gg.shaded.vuei.SimpleRenderable
+import gg.shaded.vuei.observe
 import io.reactivex.rxjava3.core.Observable
 import org.bukkit.inventory.ItemStack
 
@@ -24,7 +25,11 @@ class IconLayout(
         )
         { t, n, d ->
             val item = when(t) {
-                is ItemStack -> t
+                is ItemStack -> itemFactory.create(
+                    t,
+                    n.takeIf { it.isNotEmpty() },
+                    d.takeIf { it.isNotEmpty() }
+                )
                 is String -> itemFactory.create(
                     t,
                     n.takeIf { it.isNotEmpty() },

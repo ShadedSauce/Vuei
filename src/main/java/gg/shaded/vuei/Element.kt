@@ -32,12 +32,9 @@ fun List<Element>.allocate(
 ) = Observable.combineLatest(
         this.map { child ->
             child.layout.allocate(
-                SimpleLayoutContext(
-                    child,
-                    context.parent,
-                    context.bindings.plus(bindings ?: HashMap()),
-                    context.components,
-                    context.slots
+                context.copy(
+                    element = child,
+                    bindings = context.bindings.plus(bindings ?: HashMap())
                 )
             )
         }

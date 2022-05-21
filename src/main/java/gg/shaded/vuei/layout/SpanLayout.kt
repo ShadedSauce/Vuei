@@ -11,17 +11,18 @@ class SpanLayout: Layout {
             .map { children ->
                 var x = 0
 
-                children.map { child ->
-                    SimpleRenderable(
+                val spanned = children.map { child ->
+                    child.copy(
                         x = x,
-                        width = child.width,
-                        height = child.height,
-                        element = child.element,
-                        children = child.children,
-                        item = child.item,
-                        onClick = child.onClick
                     ).also { x += it.width }
                 }
+
+                SimpleRenderable(
+                    width = spanned.maxOfOrNull { it.width + it.x } ?: 0,
+                    height = spanned.maxOfOrNull { it.height + it.y } ?: 0,
+                    children = spanned,
+                    element = context.element
+                ).toList()
             }
     }
 }

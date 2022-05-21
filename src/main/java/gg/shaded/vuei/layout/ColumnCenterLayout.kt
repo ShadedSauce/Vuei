@@ -16,13 +16,7 @@ class ColumnCenterLayout: Layout {
         )
 
         return context.element.children.allocate(
-            SimpleLayoutContext(
-                context.element,
-                container,
-                context.bindings,
-                context.components,
-                context.slots
-            )
+            context.copy(parent = container)
         )
             .map { children ->
                 val used = children.sumOf { it.height }
@@ -30,17 +24,7 @@ class ColumnCenterLayout: Layout {
                 var lastY = start
 
                 val childrenLayout = children.map { child ->
-                    val renderable = SimpleRenderable(
-                        y = lastY,
-                        width = child.width,
-                        height = child.height,
-                        element = child.element,
-                        item = child.item,
-                        children = child.children
-                    )
-
-                    lastY = renderable.y + renderable.height
-                    return@map renderable
+                    child.copy(y = lastY).also { lastY = it.y + it.height }
                 }
 
                 val height = childrenLayout.maxOf { it.height + it.y }

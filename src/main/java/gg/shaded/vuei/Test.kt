@@ -197,7 +197,6 @@ class TestPluginManager: PluginManager {
         listeners.forEach { listener ->
             listener.javaClass.methods
                 .filter { it.parameterTypes.firstOrNull() == event.javaClass }
-                .onEach { println("found match: $it") }
                 .forEach { it.invoke(listener, event) }
         }
     }

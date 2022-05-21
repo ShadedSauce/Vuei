@@ -1,7 +1,5 @@
 package gg.shaded.vuei
 
-import io.reactivex.rxjava3.core.Observable
-
 interface Template {
     val element: Element
 }
@@ -13,3 +11,5 @@ class HtmlTemplate(
     override val element: Element
         get() = HtmlLanguage(itemFactory).parse(DequeParserContext(body)).first()
 }
+
+fun String.interpolate() = this.replace("$%", "$")

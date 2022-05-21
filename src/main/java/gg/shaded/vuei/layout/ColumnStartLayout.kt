@@ -14,27 +14,15 @@ class ColumnStartLayout: Layout {
         )
 
         return context.element.children.allocate(
-            SimpleLayoutContext(
-                context.element,
-                container,
-                context.bindings,
-                context.components,
-                context.slots
-            )
+            context.copy(parent = container)
         )
             .map { children ->
                 var y = 0
 
                 val childrenLayout = children.map { child ->
-                    SimpleRenderable(
-                        y = y,
-                        width = child.width,
-                        height = child.height,
-                        element = child.element,
-                        item = child.item,
-                        children = child.children,
-                        onClick = child.onClick
-                    ).also { y += it.height }
+                    child.copy(
+                        y = y + child.y
+                    ).also { y += it.height + it.y }
                 }
 
                 val height = childrenLayout.maxOf { it.height + it.y }

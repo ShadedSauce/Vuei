@@ -3,6 +3,7 @@ package gg.shaded.vuei.layout
 import gg.shaded.vuei.Renderable
 import gg.shaded.vuei.SimpleRenderable
 import gg.shaded.vuei.allocate
+import gg.shaded.vuei.observe
 import io.reactivex.rxjava3.core.Observable
 
 class PaddingLayout: Layout {
@@ -49,13 +50,7 @@ class PaddingLayout: Layout {
                 )
 
                 context.element.children.allocate(
-                    SimpleLayoutContext(
-                        context.element,
-                        bounds,
-                        context.bindings,
-                        context.components,
-                        context.slots
-                    )
+                    context.copy(parent = bounds)
                 )
                     .map { children ->
                         val height = children.maxOf { it.height + it.y }

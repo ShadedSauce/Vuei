@@ -15,16 +15,9 @@ class RowSpaceBetweenLayout: Layout {
         )
 
         return context.element.children.allocate(
-            SimpleLayoutContext(
-                context.element,
-                container,
-                context.bindings,
-                context.components,
-                context.slots
-            )
+            context.copy(parent = container)
         )
             .map { children ->
-                println("row sb new children")
                 val used = children.sumOf { it.width }
                 val free = container.width - used
                 val dividers = children.count() - 1
@@ -32,18 +25,11 @@ class RowSpaceBetweenLayout: Layout {
                 var lastX = 0
 
                 val childrenLayout = children.mapIndexed { i, child ->
-                    val renderable = SimpleRenderable(
-                        x = if(i > 0) lastX + divider else 0,
-                        width = child.width,
-                        height = child.height,
-                        element = child.element,
-                        item = child.item,
-                        children = child.children,
-                        onClick = child.onClick
-                    )
-
-                    lastX = renderable.x + renderable.width
-                    return@mapIndexed renderable
+                    child.copy(
+                        x = if(i > 0) lastX + divider else 0
+                    ).also {
+                        lastX = it.x + it.width
+                    }
                 }
 
                 val height = childrenLayout.maxOf { it.height + it.y }

@@ -89,6 +89,7 @@ open class ComponentWindow(
             .switchMap { bindings ->
                 document.layout.allocate(
                     SimpleLayoutContext(
+                        superContext = null,
                         document,
                         SimpleRenderable(
                             width = 9,
@@ -104,9 +105,6 @@ open class ComponentWindow(
             .debounce(50, TimeUnit.MILLISECONDS, contextScheduler) // 1 tick
             .map { it.first() }
             .observeOn(scheduler)
-            .doOnError { println("erroring") }
-            .doOnDispose { println("disposing") }
-            .doOnNext { println("height: ${it.height}, ${System.currentTimeMillis()}") }
             .subscribeOn(contextScheduler)
             // TODO: Send error to error handler
             .subscribe { renderable -> this.renderable = renderable }
@@ -126,22 +124,18 @@ open class ComponentWindow(
         val layout = this.renderable ?: return
 
         if(slot < 0) {
-            println("neg slot")
             return
         }
 
         if(view.topInventory != inventory) {
-            println("not inv")
             return
         }
 
         if(clickedInventory != inventory) {
-            println("clicked doesn't match")
             if(isShiftClick) {
                 slot = inventory.first(currentItem ?: ItemStack(Material.AIR))
                     .let { if(it == -1) inventory.firstEmpty() else it }
             } else {
-                println("returning")
                 return
             }
         }

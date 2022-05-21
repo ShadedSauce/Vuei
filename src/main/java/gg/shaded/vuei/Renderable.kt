@@ -19,6 +19,18 @@ interface Renderable {
         context: ClickContext,
     ): Boolean
 
+    fun copy(
+        x: Int? = null,
+        y: Int? = null,
+        width: Int? = null,
+        height: Int? = null,
+        element: Element? = null,
+        children: List<Renderable>? = null,
+        item: ItemStack? = null,
+        title: String? = null,
+        onClick: ((ClickContext) -> Unit)? = null
+    ): Renderable
+
     fun toList(): List<Renderable> = listOf(this)
 }
 
@@ -58,11 +70,32 @@ data class SimpleRenderable(
             }
 
         if(!consumed) {
-            println("has onclick? $onClick, $item")
             onClick?.invoke(context)
             return true
         }
 
         return false
     }
+
+    override fun copy(
+        x: Int?,
+        y: Int?,
+        width: Int?,
+        height: Int?,
+        element: Element?,
+        children: List<Renderable>?,
+        item: ItemStack?,
+        title: String?,
+        onClick: ((ClickContext) -> Unit)?
+    ) = SimpleRenderable(
+        x ?: this.x,
+        y ?: this.y,
+        width ?: this.width,
+        height ?: this.height,
+        element ?: this.element,
+        children ?: this.children,
+        item ?: this.item,
+        title ?: this.title,
+        onClick ?: this.onClick
+    )
 }

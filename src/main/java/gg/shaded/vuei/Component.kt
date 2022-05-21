@@ -18,9 +18,11 @@ interface Component {
 interface SetupContext {
     val props: Map<String, Any>
 
-    val events: PublishSubject<in Any>
-        get() = props["events"] as? PublishSubject<in Any>
-            ?: throw IllegalStateException("Must pass events (is it a PublishSubject?)")
+    fun emit(e: Any) {
+        val emitter = props["emit"] ?: throw IllegalStateException("Emit not defined.")
+
+        emitter.invoke(e)
+    }
 }
 
 class SimpleSetupContext(
