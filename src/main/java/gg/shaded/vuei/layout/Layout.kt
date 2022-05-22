@@ -1,13 +1,12 @@
 package gg.shaded.vuei.layout
 
-import gg.shaded.vuei.Component
-import gg.shaded.vuei.Element
-import gg.shaded.vuei.Renderable
-import gg.shaded.vuei.unwrap
+import gg.shaded.vuei.*
 import io.reactivex.rxjava3.core.Observable
 import org.graalvm.polyglot.Context
+import org.graalvm.polyglot.Engine
 import org.graalvm.polyglot.HostAccess
 import org.graalvm.polyglot.Value
+import java.io.Closeable
 import java.util.*
 
 
@@ -18,11 +17,15 @@ interface Layout {
 interface LayoutContext {
     val superContext: LayoutContext?
 
+    val engine: Engine
+
     val element: Element
 
     val parent: Renderable
 
-    val bindings: Map<String, Any>
+    val closeables: MutableSet<AutoCloseable>
+
+    val bindings: Map<String, Any?>
 
     val components: Map<String, Component>
 
@@ -30,9 +33,10 @@ interface LayoutContext {
 
     fun copy(
         superContext: LayoutContext? = null,
+        engine: Engine? = null,
         element: Element? = null,
         parent: Renderable? = null,
-        bindings: Map<String, Any>? = null,
+        bindings: Map<String, Any?>? = null,
         components: Map<String, Component>? = null,
         slots: Map<String, List<Element>>? = null,
     ): LayoutContext
@@ -48,21 +52,42 @@ interface LayoutContext {
         return element.values[key]?.let { Observable.just(it) }
     }
 
-    fun getBinding(binding: String): Any? {
-        // TODO: Dispose context (maybe use one context per LayoutContext?)
-        val context = Context.newBuilder("js")
-            .allowAllAccess(true)
-            .allowHostAccess(
-                HostAccess.newBuilder(HostAccess.ALL)
-                    .targetTypeMapping(
-                        Value::class.java,
-                        Any::class.java,
-                        { v -> v.hasArrayElements() }
-                    ) { v -> v.`as`(List::class.java) }
-                    .build()
-            )
-            .build()
+    fun getBinding(binding: String): Any?
+}
 
+class SimpleLayoutContext(
+    override val superContext: LayoutContext?,
+    override val engine: Engine,
+    override val element: Element,
+    override val parent: Renderable,
+    override val closeables: MutableSet<AutoCloseable>,
+    override val bindings: Map<String, Any?>,
+    override val components: Map<String, Component>,
+    override val slots: Map<String, List<Element>>
+): LayoutContext {
+    override fun copy(
+        superContext: LayoutContext?,
+        engine: Engine?,
+        element: Element?,
+        parent: Renderable?,
+        bindings: Map<String, Any?>?,
+        components: Map<String, Component>?,
+        slots: Map<String, List<Element>>?
+    ): LayoutContext {
+        return SimpleLayoutContext(
+            superContext ?: this.superContext,
+            engine ?: this.engine,
+            element ?: this.element,
+            parent ?: this.parent,
+            this.closeables,
+            bindings ?: this.bindings,
+            components ?: this.components,
+            slots ?: this.slots
+        )
+    }
+
+    override fun getBinding(binding: String): Any? {
+        val context = createJavaScriptContext(engine)
         val jsBindings = context.getBindings("js")
 
         this.bindings.forEach { (key, binding) ->
@@ -70,38 +95,22 @@ interface LayoutContext {
         }
 
         val result = try {
-            context.eval("js", binding)
+            context.eval("js", binding).unwrap()
         } catch(e: Exception) {
             throw RuntimeException("Error in $binding", e)
         }
 
-        return result.unwrap()
-    }
-}
+        if(result is Observable<*>) {
+            return result.doOnDispose { context.close() }
+        }
 
-class SimpleLayoutContext(
-    override val superContext: LayoutContext?,
-    override val element: Element,
-    override val parent: Renderable,
-    override val bindings: Map<String, Any>,
-    override val components: Map<String, Component>,
-    override val slots: Map<String, List<Element>>
-): LayoutContext {
-    override fun copy(
-        superContext: LayoutContext?,
-        element: Element?,
-        parent: Renderable?,
-        bindings: Map<String, Any>?,
-        components: Map<String, Component>?,
-        slots: Map<String, List<Element>>?
-    ): LayoutContext {
-        return SimpleLayoutContext(
-            superContext ?: this.superContext,
-            element ?: this.element,
-            parent ?: this.parent,
-            bindings ?: this.bindings,
-            components ?: this.components,
-            slots ?: this.slots
-        )
+        if(result !is Value || !result.canExecute()) {
+            context.close()
+        }
+        else {
+            closeables.add(context)
+        }
+
+        return result
     }
 }

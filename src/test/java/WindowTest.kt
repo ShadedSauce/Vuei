@@ -71,18 +71,18 @@ class WindowTest {
             TestComponent()
         )
 
-        window.callback = {
-            Assertions.assertNotNull(player.currentInventory)
-
-            println(player.currentInventory!!.title)
-            val rows = player.currentInventory!!.size / 9
-
-            for(i in 0 until rows) {
-                println(player.currentInventory!!.items.toList().subList(i * 9, i * 9 + 9))
-            }
-
-            println("---")
-        }
+//        window.callback = {
+//            Assertions.assertNotNull(player.currentInventory)
+//
+//            println(player.currentInventory!!.title)
+//            val rows = player.currentInventory!!.size / 9
+//
+//            for(i in 0 until rows) {
+//                println(player.currentInventory!!.items.toList().subList(i * 9, i * 9 + 9))
+//            }
+//
+//            println("---")
+//        }
 
         window.show(player)
         executor.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS)
@@ -2123,7 +2123,7 @@ class TestComponent: Component {
         "child" to Child()
     )
 
-    override fun setup(context: SetupContext): Observable<Map<String, Any>> {
+    override fun setup(context: SetupContext): Observable<Map<String, Any?>> {
         val title = Observable.interval(0, 1, TimeUnit.SECONDS)
             .map { "Title $it" }
             .doOnSubscribe { println("subbed: title: ${System.currentTimeMillis()}") }
@@ -2163,7 +2163,7 @@ class TestComponent: Component {
             "grand-child" to GrandChild()
         )
 
-        override fun setup(context: SetupContext): Observable<Map<String, Any>> {
+        override fun setup(context: SetupContext): Observable<Map<String, Any?>> {
             val title = Observable.interval(0, 1, TimeUnit.SECONDS)
                 .map { "Title $it" }
 
@@ -2193,7 +2193,7 @@ class TestComponent: Component {
             <icon type="DIAMOND" />
         """.trimIndent(), TestItemFactory())
 
-        override fun setup(context: SetupContext): Observable<Map<String, Any>> {
+        override fun setup(context: SetupContext): Observable<Map<String, Any?>> {
             return mapOf(
                 "type" to Observable.just("DIAMOND")
             ).sync()
@@ -2207,6 +2207,7 @@ class TestWindow(
     inventoryProvider: InventoryProvider,
     renderer: Renderer,
     scheduler: Scheduler,
+    errorHandler: ErrorHandler = ErrorHandler { it.printStackTrace() },
     root: Component,
 ): ComponentWindow(
     plugin,
@@ -2214,6 +2215,7 @@ class TestWindow(
     inventoryProvider,
     renderer,
     scheduler,
+    errorHandler,
     root,
 ) {
     override var renderable: Renderable?

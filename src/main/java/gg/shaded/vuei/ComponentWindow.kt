@@ -2,6 +2,7 @@ package gg.shaded.vuei
 
 import gg.shaded.vuei.layout.SimpleLayoutContext
 import io.reactivex.rxjava3.core.Completable
+import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Scheduler
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
@@ -10,6 +11,7 @@ import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.Cancellable
 import org.bukkit.event.EventHandler
+import org.bukkit.event.HandlerList
 import org.bukkit.event.Listener
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
@@ -19,6 +21,11 @@ import org.bukkit.inventory.InventoryView
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.PluginManager
+import org.graalvm.polyglot.Context
+import org.graalvm.polyglot.Engine
+import org.graalvm.polyglot.HostAccess
+import org.graalvm.polyglot.Value
+import java.io.Closeable
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
@@ -29,6 +36,7 @@ open class ComponentWindow(
     private val inventoryProvider: InventoryProvider = CachedInventoryProvider(),
     private val renderer: Renderer = InventoryRenderer(inventoryProvider),
     private val scheduler: Scheduler = Schedulers.from { r -> Bukkit.getScheduler().runTask(plugin, r) },
+    private val errorHandler: ErrorHandler,
     private val root: Component
 ): Window, Listener {
     private var document: Element = root.template.element
@@ -56,10 +64,12 @@ open class ComponentWindow(
     private val viewers = ArrayList<Player>()
 
     private var subscription: Disposable? = null
+    private var closeables: MutableSet<AutoCloseable> = HashSet()
     private var ignoreClose: Boolean = false
 
     private val contextScheduler = Schedulers.from(
         Executors.newSingleThreadExecutor { r ->
+            println("creating new thread")
             thread(
                 contextClassLoader = ClassLoader.getSystemClassLoader(),
                 start = false
@@ -85,30 +95,38 @@ open class ComponentWindow(
     }
 
     private fun start() {
-        subscription = root.setup(SimpleSetupContext(HashMap()))
+        subscription = Observable.defer { root.setup(SimpleSetupContext(HashMap())) }
             .switchMap { bindings ->
-                document.layout.allocate(
-                    SimpleLayoutContext(
-                        superContext = null,
-                        document,
-                        SimpleRenderable(
-                            width = 9,
-                            height = 6,
-                            element = document
-                        ),
-                        bindings,
-                        root.imports,
-                        slots = HashMap()
-                    )
-                )
+                document.layout.allocate(createLayoutContext(bindings))
             }
+            .subscribeOn(contextScheduler)
             .debounce(50, TimeUnit.MILLISECONDS, contextScheduler) // 1 tick
             .map { it.first() }
             .observeOn(scheduler)
-            .subscribeOn(contextScheduler)
-            // TODO: Send error to error handler
-            .subscribe { renderable -> this.renderable = renderable }
+            .subscribe(
+                { renderable -> this.renderable = renderable },
+                { t ->
+                    errorHandler.handle(t)
+                    viewers.forEach { it.closeInventory() }
+                }
+            )
     }
+
+    private fun createLayoutContext(bindings: Map<String, Any?>) =
+        SimpleLayoutContext(
+            superContext = null,
+            Engine.create(),
+            document,
+            SimpleRenderable(
+                width = 9,
+                height = 6,
+                element = document
+            ),
+            closeables,
+            bindings,
+            root.imports,
+            slots = HashMap()
+        )
 
     private fun triggerClick(
         player: Player,
@@ -159,11 +177,16 @@ open class ComponentWindow(
 
         Completable.fromAction { layout.click(x, y, context) }
             .subscribeOn(contextScheduler)
-            .subscribe() // TODO: Send to error handler
+            .subscribe(
+                {},
+                errorHandler::handle
+            )
     }
 
     protected open fun dispose() {
+        closeables.forEach(AutoCloseable::close)
         subscription?.dispose()
+        HandlerList.unregisterAll(this)
     }
 
     @EventHandler

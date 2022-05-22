@@ -10,6 +10,7 @@ class ForLayout(
         val loop = context.element.loop ?: return layout.allocate(context)
 
         return context.getBinding(loop.binding)?.observe()
+            ?.distinctUntilChanged()
             ?.switchMap { bindings ->
                 if((bindings as Iterable<Any>).toList().isEmpty()) {
                     return@switchMap Observable.just(listOf())

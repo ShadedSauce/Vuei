@@ -16,7 +16,7 @@ class IfLayout(
             condition
         ) { children, visible ->
             if(visible) children
-            else ArrayList()
+            else emptyList()
         }
     }
 }

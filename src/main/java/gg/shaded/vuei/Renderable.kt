@@ -70,6 +70,7 @@ data class SimpleRenderable(
             }
 
         if(!consumed) {
+            println("invoking $onClick")
             onClick?.invoke(context)
             return true
         }

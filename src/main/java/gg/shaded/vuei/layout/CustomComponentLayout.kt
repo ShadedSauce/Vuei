@@ -2,6 +2,7 @@ package gg.shaded.vuei.layout
 
 import gg.shaded.vuei.Renderable
 import gg.shaded.vuei.SimpleSetupContext
+import gg.shaded.vuei.observe
 import io.reactivex.rxjava3.core.Observable
 import java.lang.IllegalStateException
 
@@ -22,10 +23,16 @@ class CustomComponentLayout(
         }
             .associate { it.values["slot"] as String to it.children }
 
-        val props = context.element.bindings
-            .mapValues { entry -> context.getAttributeBinding(entry.key) }
-            .filterValues { it != null }
-            .mapValues { it.value!! }
+        val props = component.props
+            .associate { prop ->
+                val binding = context.getAttributeBinding(prop.name)
+
+                val validated = prop.validate(
+                    context.getAttributeBinding(prop.name)
+                ) ?: binding
+
+                prop.name to validated
+            }
             .plus(
                 context.element.values.mapValues { Observable.just(it.value) }
             )

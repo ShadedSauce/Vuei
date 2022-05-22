@@ -2,6 +2,9 @@ package gg.shaded.vuei
 
 import gg.shaded.vuei.layout.*
 import io.reactivex.rxjava3.core.Observable
+import org.graalvm.polyglot.Context
+import org.graalvm.polyglot.Engine
+import org.graalvm.polyglot.HostAccess
 import org.graalvm.polyglot.Value
 
 class HtmlLanguage(
@@ -175,25 +178,15 @@ fun Any.invoke(vararg args: Any) = when(this) {
 
 fun Any.unwrap(): Any? {
     if(this is Value) {
-        if(this.isNull) {
-            return null
-        }
+        if(this.isNull) return null
 
-        if(this.isHostObject) {
-            return this.asHostObject<Any>()
-        }
+        if(this.isHostObject) return this.asHostObject<Any>()
 
-        if(this.isNumber) {
-            return this.asInt()
-        }
+        if(this.isNumber) return this.asInt()
 
-        if(this.isString) {
-            return this.asString()
-        }
+        if(this.isString) return this.asString()
 
-        if(this.hasArrayElements()) {
-            return this.`as`(List::class.java)
-        }
+        if(this.hasArrayElements()) return ArrayList(this.`as`(List::class.java))
     }
 
     return this
@@ -202,3 +195,18 @@ fun Any.unwrap(): Any? {
 fun Any.observe() = if(this is Observable<*>)
     this.map { it.unwrap() ?: throw IllegalStateException("Expecting non null value.") }
     else Observable.just(this.unwrap() ?: throw IllegalStateException("Expecting non null value."))
+
+private val hostAccess = HostAccess.newBuilder(HostAccess.ALL)
+    .targetTypeMapping(
+        Value::class.java,
+        Any::class.java,
+        { v -> v.hasArrayElements() }
+    ) { v -> ArrayList(v.`as`(List::class.java)) }
+    .build()
+fun createJavaScriptContext(engine: Engine): Context =
+    Context.newBuilder("js")
+        .engine(engine)
+        .allowAllAccess(true)
+        .allowCreateThread(false)
+        .allowHostAccess(hostAccess)
+        .build()

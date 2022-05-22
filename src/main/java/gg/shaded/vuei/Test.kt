@@ -2112,6 +2112,7 @@ class TestWindow(
     renderer: Renderer = InventoryRenderer(inventoryProvider),
     scheduler: Scheduler,
     root: Component,
+    errorHandler: ErrorHandler = ErrorHandler { it.printStackTrace() },
     private val callback: ((TestWindow, Inventory, Renderable) -> Unit)? = null
 ): ComponentWindow(
     plugin,
@@ -2119,6 +2120,7 @@ class TestWindow(
     inventoryProvider,
     renderer,
     scheduler,
+    errorHandler,
     root,
 ) {
     override var renderable: Renderable?
