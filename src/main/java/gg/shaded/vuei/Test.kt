@@ -2148,11 +2148,17 @@ class TestWindow(
         )
     }
 
-    fun awaitRedraw() {
+    fun awaitRedraw(timeout: Long = 1000L) {
         val old = this.renderable
+        var elapsed = 0L
 
         while(this.renderable == old) {
+            if(elapsed >= timeout) {
+                throw InterruptedException("Redraw took too long.")
+            }
+
             Thread.sleep(50) // 1 tick
+            elapsed += 50
         }
     }
 

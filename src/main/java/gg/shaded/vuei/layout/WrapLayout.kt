@@ -27,8 +27,8 @@ class WrapLayout: Layout {
                 }
 
                 SimpleRenderable(
-                    width = children.maxOfOrNull { it.width + it.x } ?: 0,
-                    height = children.maxOfOrNull { it.height + it.y } ?: 0,
+                    width = wrapped.maxOfOrNull { it.width + it.x } ?: 0,
+                    height = wrapped.maxOfOrNull { it.height + it.y } ?: 0,
                     element = context.element,
                     children = wrapped
                 ).toList()

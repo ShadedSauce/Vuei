@@ -39,10 +39,10 @@ class RequiredProp(
 interface SetupContext {
     val props: Map<String, Any?>
 
-    fun emit(e: Any) {
+    fun emit(vararg e: Any) {
         val emitter = props["emit"] ?: throw IllegalStateException("Emit not defined.")
 
-        emitter.invoke(e)
+        emitter.invoke(*e)
     }
 }
 

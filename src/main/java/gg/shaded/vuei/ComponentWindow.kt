@@ -1,5 +1,6 @@
 package gg.shaded.vuei
 
+import gg.shaded.vuei.layout.LayoutContext
 import gg.shaded.vuei.layout.SimpleLayoutContext
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Observable
@@ -21,11 +22,7 @@ import org.bukkit.inventory.InventoryView
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.PluginManager
-import org.graalvm.polyglot.Context
 import org.graalvm.polyglot.Engine
-import org.graalvm.polyglot.HostAccess
-import org.graalvm.polyglot.Value
-import java.io.Closeable
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
@@ -64,12 +61,11 @@ open class ComponentWindow(
     private val viewers = ArrayList<Player>()
 
     private var subscription: Disposable? = null
-    private var closeables: MutableSet<AutoCloseable> = HashSet()
+    private var contexts: MutableSet<LayoutContext> = HashSet()
     private var ignoreClose: Boolean = false
 
     private val contextScheduler = Schedulers.from(
         Executors.newSingleThreadExecutor { r ->
-            println("creating new thread")
             thread(
                 contextClassLoader = ClassLoader.getSystemClassLoader(),
                 start = false
@@ -107,7 +103,8 @@ open class ComponentWindow(
                 { renderable -> this.renderable = renderable },
                 { t ->
                     errorHandler.handle(t)
-                    viewers.forEach { it.closeInventory() }
+                    // Prevent CME
+                    ArrayList(viewers).forEach { it.closeInventory() }
                 }
             )
     }
@@ -122,11 +119,10 @@ open class ComponentWindow(
                 height = 6,
                 element = document
             ),
-            closeables,
             bindings,
             root.imports,
             slots = HashMap()
-        )
+        ).also { contexts.add(it) }
 
     private fun triggerClick(
         player: Player,
@@ -184,7 +180,7 @@ open class ComponentWindow(
     }
 
     protected open fun dispose() {
-        closeables.forEach(AutoCloseable::close)
+        contexts.forEach(AutoCloseable::close)
         subscription?.dispose()
         HandlerList.unregisterAll(this)
     }

@@ -2,19 +2,16 @@ package gg.shaded.vuei.layout
 
 import gg.shaded.vuei.*
 import io.reactivex.rxjava3.core.Observable
-import org.graalvm.polyglot.Context
 import org.graalvm.polyglot.Engine
-import org.graalvm.polyglot.HostAccess
 import org.graalvm.polyglot.Value
-import java.io.Closeable
-import java.util.*
+import kotlin.collections.HashSet
 
 
 interface Layout {
     fun allocate(context: LayoutContext): Observable<List<Renderable>>
 }
 
-interface LayoutContext {
+interface LayoutContext: AutoCloseable {
     val superContext: LayoutContext?
 
     val engine: Engine
@@ -22,8 +19,6 @@ interface LayoutContext {
     val element: Element
 
     val parent: Renderable
-
-    val closeables: MutableSet<AutoCloseable>
 
     val bindings: Map<String, Any?>
 
@@ -60,11 +55,18 @@ class SimpleLayoutContext(
     override val engine: Engine,
     override val element: Element,
     override val parent: Renderable,
-    override val closeables: MutableSet<AutoCloseable>,
     override val bindings: Map<String, Any?>,
     override val components: Map<String, Component>,
     override val slots: Map<String, List<Element>>
 ): LayoutContext {
+    private val closeables = HashSet<AutoCloseable>()
+    private val children = HashSet<LayoutContext>()
+
+    override fun close() {
+        closeables.plus(children)
+            .forEach(AutoCloseable::close)
+    }
+
     override fun copy(
         superContext: LayoutContext?,
         engine: Engine?,
@@ -79,15 +81,16 @@ class SimpleLayoutContext(
             engine ?: this.engine,
             element ?: this.element,
             parent ?: this.parent,
-            this.closeables,
             bindings ?: this.bindings,
             components ?: this.components,
             slots ?: this.slots
-        )
+        ).also { children.add(it) }
     }
 
     override fun getBinding(binding: String): Any? {
-        val context = createJavaScriptContext(engine)
+        println("creating context")
+        val context = createJavaScriptContext(Engine.create())
+        println("created context")
         val jsBindings = context.getBindings("js")
 
         this.bindings.forEach { (key, binding) ->
@@ -95,6 +98,7 @@ class SimpleLayoutContext(
         }
 
         val result = try {
+            println("eval: $binding")
             context.eval("js", binding).unwrap()
         } catch(e: Exception) {
             throw RuntimeException("Error in $binding", e)

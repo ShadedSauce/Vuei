@@ -169,11 +169,15 @@ data class AttributeResult(
     val loop: For?
 )
 
-fun Any.invoke(vararg args: Any) = when(this) {
-    is Function1<*, *> -> (this as (Any) -> Any)(args.first())
-    is Function2<*, *, *> -> (this as (Any, Any) -> Any)(args[0], args[1])
-    is Value -> this.executeVoid(*args)
-    else -> throw IllegalStateException("Callback not callable.")
+fun Any.invoke(vararg args: Any) {
+    val invoke = this.javaClass.methods.find { it.name == "invoke" }
+
+    if(invoke != null) {
+        invoke.isAccessible = true
+        invoke.invoke(this, *args)
+    }
+    else if(this is Value) this.executeVoid(*args)
+    else throw IllegalStateException("Callback not callable.")
 }
 
 fun Any.unwrap(): Any? {

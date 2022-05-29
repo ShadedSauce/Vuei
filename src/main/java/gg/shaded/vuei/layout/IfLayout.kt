@@ -11,12 +11,16 @@ class IfLayout(
         val condition = context.getAttributeBinding("if")?.observe() as? Observable<Boolean>
             ?: Observable.just(true)
 
-        return Observable.combineLatest(
-            layout.allocate(context),
-            condition
-        ) { children, visible ->
-            if(visible) children
-            else emptyList()
+        var childContext: LayoutContext? = null
+
+        return condition.distinctUntilChanged().switchMap { visible ->
+            if(visible) layout.allocate(
+                context.copy().also { childContext = it }
+            )
+            else {
+                childContext?.close()
+                Observable.just(emptyList())
+            }
         }
     }
 }
