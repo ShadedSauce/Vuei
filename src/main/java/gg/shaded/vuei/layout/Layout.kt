@@ -90,7 +90,6 @@ class SimpleLayoutContext(
 
     override fun getBinding(binding: String): Any? {
         val result = try {
-            println("function: (${this.bindings.keys.joinToString()})")
             val callable = jsContext.eval("js", "(${this.bindings.keys.joinToString()}) => $binding")
 
             callable.execute(*this.bindings.values.toTypedArray())
