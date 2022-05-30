@@ -2,6 +2,7 @@ package gg.shaded.vuei.layout
 
 import gg.shaded.vuei.*
 import io.reactivex.rxjava3.core.Observable
+import org.graalvm.polyglot.Context
 import org.graalvm.polyglot.Engine
 import org.graalvm.polyglot.Value
 import kotlin.collections.HashSet
@@ -14,7 +15,7 @@ interface Layout {
 interface LayoutContext: AutoCloseable {
     val superContext: LayoutContext?
 
-    val engine: Engine
+    val jsContext: Context
 
     val element: Element
 
@@ -28,7 +29,7 @@ interface LayoutContext: AutoCloseable {
 
     fun copy(
         superContext: LayoutContext? = null,
-        engine: Engine? = null,
+        jsContext: Context? = null,
         element: Element? = null,
         parent: Renderable? = null,
         bindings: Map<String, Any?>? = null,
@@ -52,7 +53,7 @@ interface LayoutContext: AutoCloseable {
 
 class SimpleLayoutContext(
     override val superContext: LayoutContext?,
-    override val engine: Engine,
+    override val jsContext: Context,
     override val element: Element,
     override val parent: Renderable,
     override val bindings: Map<String, Any?>,
@@ -69,7 +70,7 @@ class SimpleLayoutContext(
 
     override fun copy(
         superContext: LayoutContext?,
-        engine: Engine?,
+        jsContext: Context?,
         element: Element?,
         parent: Renderable?,
         bindings: Map<String, Any?>?,
@@ -78,7 +79,7 @@ class SimpleLayoutContext(
     ): LayoutContext {
         return SimpleLayoutContext(
             superContext ?: this.superContext,
-            engine ?: this.engine,
+            jsContext ?: this.jsContext,
             element ?: this.element,
             parent ?: this.parent,
             bindings ?: this.bindings,
@@ -88,33 +89,15 @@ class SimpleLayoutContext(
     }
 
     override fun getBinding(binding: String): Any? {
-        println("creating context")
-        val context = createJavaScriptContext(Engine.create())
-        println("created context")
-        val jsBindings = context.getBindings("js")
-
-        this.bindings.forEach { (key, binding) ->
-            jsBindings.putMember(key, binding)
-        }
-
         val result = try {
-            println("eval: $binding")
-            context.eval("js", binding).unwrap()
+            println("function: (${this.bindings.keys.joinToString()})")
+            val callable = jsContext.eval("js", "(${this.bindings.keys.joinToString()}) => $binding")
+
+            callable.execute(*this.bindings.values.toTypedArray())
         } catch(e: Exception) {
             throw RuntimeException("Error in $binding", e)
         }
 
-        if(result is Observable<*>) {
-            return result.doOnDispose { context.close() }
-        }
-
-        if(result !is Value || !result.canExecute()) {
-            context.close()
-        }
-        else {
-            closeables.add(context)
-        }
-
-        return result
+        return result.unwrap()
     }
 }

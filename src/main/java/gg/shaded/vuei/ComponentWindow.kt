@@ -22,6 +22,7 @@ import org.bukkit.inventory.InventoryView
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.PluginManager
+import org.graalvm.polyglot.Context
 import org.graalvm.polyglot.Engine
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -61,8 +62,9 @@ open class ComponentWindow(
     private val viewers = ArrayList<Player>()
 
     private var subscription: Disposable? = null
-    private var contexts: MutableSet<LayoutContext> = HashSet()
+    private var jsContext: Context? = null
     private var ignoreClose: Boolean = false
+    private val contexts = HashSet<LayoutContext>()
 
     private val contextScheduler = Schedulers.from(
         Executors.newSingleThreadExecutor { r ->
@@ -91,9 +93,15 @@ open class ComponentWindow(
     }
 
     private fun start() {
+        contextScheduler.scheduleDirect {  }
+
         subscription = Observable.defer { root.setup(SimpleSetupContext(HashMap())) }
             .switchMap { bindings ->
-                document.layout.allocate(createLayoutContext(bindings))
+                document.layout.allocate(createLayoutContext(
+                    this.jsContext ?: createJavaScriptContext(Engine.create())
+                        .also { this.jsContext = it },
+                    bindings
+                ))
             }
             .subscribeOn(contextScheduler)
             .debounce(50, TimeUnit.MILLISECONDS, contextScheduler) // 1 tick
@@ -109,10 +117,10 @@ open class ComponentWindow(
             )
     }
 
-    private fun createLayoutContext(bindings: Map<String, Any?>) =
+    private fun createLayoutContext(jsContext: Context, bindings: Map<String, Any?>) =
         SimpleLayoutContext(
             superContext = null,
-            Engine.create(),
+            jsContext,
             document,
             SimpleRenderable(
                 width = 9,
@@ -181,6 +189,7 @@ open class ComponentWindow(
 
     protected open fun dispose() {
         contexts.forEach(AutoCloseable::close)
+        jsContext?.close()
         subscription?.dispose()
         HandlerList.unregisterAll(this)
     }

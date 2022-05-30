@@ -37,22 +37,6 @@ class ForLayout(
                 }
             } ?: layout.allocate(context)
     }
-
-    // Warmup all bindings by executing them and ignoring its value and error
-    private fun warmup(
-        context: LayoutContext, bindings: Map<String, String>
-    ) {
-        createJavaScriptContext(context.engine)
-            .use { jsContext ->
-                for(binding in bindings.values) {
-                    try {
-                        jsContext.eval("js", binding)
-                    } catch(e: Exception) {
-                        // Ignored
-                    }
-                }
-            }
-    }
 }
 
 data class For(
