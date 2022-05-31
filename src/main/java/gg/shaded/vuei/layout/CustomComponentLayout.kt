@@ -4,6 +4,7 @@ import gg.shaded.vuei.Renderable
 import gg.shaded.vuei.SimpleSetupContext
 import gg.shaded.vuei.observe
 import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.subjects.PublishSubject
 import java.lang.IllegalStateException
 
 class CustomComponentLayout(
@@ -37,7 +38,7 @@ class CustomComponentLayout(
                 context.element.values.mapValues { Observable.just(it.value) }
             )
 
-        return component.setup(SimpleSetupContext(props))
+        return component.setupWithQueue(SimpleSetupContext(props, PublishSubject.create()))
             .map { bindings ->
                 context.copy(
                     superContext = context,

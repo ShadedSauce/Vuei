@@ -169,14 +169,14 @@ data class AttributeResult(
     val loop: For?
 )
 
-fun Any.invoke(vararg args: Any) {
+fun Any.invoke(vararg args: Any): Any {
     val invoke = this.javaClass.methods.find { it.name == "invoke" }
 
-    if(invoke != null) {
+    return if(invoke != null) {
         invoke.isAccessible = true
-        invoke.invoke(this, *args)
+        invoke.invoke(this, *args) ?: Unit
     }
-    else if(this is Value) this.executeVoid(*args)
+    else if(this is Value) this.execute(*args)
     else throw IllegalStateException("Callback not callable.")
 }
 

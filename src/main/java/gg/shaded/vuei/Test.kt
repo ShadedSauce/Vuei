@@ -733,7 +733,7 @@ class TestPlayer: Player {
     }
 
     override fun getUniqueId(): UUID {
-        TODO("Not yet implemented")
+        return UUID.randomUUID()
     }
 
     override fun getTicksLived(): Int {
@@ -2163,7 +2163,13 @@ class TestWindow(
     }
 
     override fun toString(): String {
-        return (0 until (this.renderable?.height ?: 0))
+        val height = this.renderable?.height ?: 0
+
+        if(height == 0) {
+            return "Empty window"
+        }
+
+        return (0 until height)
             .joinToString("\n") { y ->
                 inventory.contents.toList()
                     .subList(y * 9, y * 9 + 9)

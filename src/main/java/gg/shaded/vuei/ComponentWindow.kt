@@ -7,6 +7,7 @@ import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Scheduler
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
+import io.reactivex.rxjava3.subjects.PublishSubject
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -95,7 +96,9 @@ open class ComponentWindow(
     private fun start() {
         contextScheduler.scheduleDirect {  }
 
-        subscription = Observable.defer { root.setup(SimpleSetupContext(HashMap())) }
+        subscription = Observable.defer {
+            root.setupWithQueue(SimpleSetupContext(HashMap(), PublishSubject.create()))
+        }
             .switchMap { bindings ->
                 document.layout.allocate(createLayoutContext(
                     this.jsContext ?: createJavaScriptContext(Engine.create())
