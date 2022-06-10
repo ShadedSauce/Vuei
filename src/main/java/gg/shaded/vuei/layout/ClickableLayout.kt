@@ -9,7 +9,7 @@ class ClickableLayout(
     private val layout: Layout
 ): Layout {
     override fun allocate(context: LayoutContext): Observable<List<Renderable>> {
-        val onClick = context.getAttributeBinding("click")?.observe() as? Observable<Any>
+        val onClick = context.getAttributeBinding("emit:click")?.observe() as? Observable<Any>
             ?: return layout.allocate(context)
 
         return Observable.combineLatest(
@@ -17,8 +17,16 @@ class ClickableLayout(
             layout.allocate(context),
         ) { callback, children ->
             children.map { child ->
-                child.copy { context ->
-                    callback.invoke(context)
+                child.copy { click ->
+                    try {
+                        callback.invoke(click)
+                    } catch (t: Throwable) {
+                        throw RuntimeException(
+                            "An error occurred while processing click: " +
+                                "${context.element.bindings["emit:click"]}",
+                            t
+                        )
+                    }
                 }
             }
         }

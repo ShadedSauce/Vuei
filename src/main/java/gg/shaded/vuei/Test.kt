@@ -1,6 +1,16 @@
 package gg.shaded.vuei
 
+import com.destroystokyo.paper.ClientOption
+import com.destroystokyo.paper.Title
+import com.destroystokyo.paper.block.TargetBlockInfo
+import com.destroystokyo.paper.entity.TargetEntityInfo
 import gg.shaded.vuei.*
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.core.Scheduler
+import net.kyori.adventure.audience.MessageType
+import net.kyori.adventure.identity.Identity
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
+import net.md_5.bungee.api.chat.BaseComponent
 import org.bukkit.*
 import org.bukkit.advancement.Advancement
 import org.bukkit.advancement.AdvancementProgress
@@ -21,12 +31,12 @@ import org.bukkit.entity.memory.MemoryKey
 import org.bukkit.event.Event
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
+import org.bukkit.event.entity.CreatureSpawnEvent
 import org.bukkit.event.entity.EntityDamageEvent
-import org.bukkit.event.inventory.ClickType
-import org.bukkit.event.inventory.InventoryAction
-import org.bukkit.event.inventory.InventoryClickEvent
-import org.bukkit.event.inventory.InventoryType
+import org.bukkit.event.inventory.*
 import org.bukkit.event.inventory.InventoryType.SlotType
+import org.bukkit.event.player.PlayerKickEvent
+import org.bukkit.event.player.PlayerResourcePackStatusEvent
 import org.bukkit.event.player.PlayerTeleportEvent
 import org.bukkit.generator.BiomeProvider
 import org.bukkit.generator.ChunkGenerator
@@ -46,15 +56,11 @@ import org.bukkit.scoreboard.Scoreboard
 import org.bukkit.util.BoundingBox
 import org.bukkit.util.RayTraceResult
 import org.bukkit.util.Vector
-import io.reactivex.rxjava3.core.Scheduler
 import java.io.File
 import java.io.InputStream
 import java.net.InetSocketAddress
 import java.util.*
-import java.util.concurrent.Executor
 import java.util.logging.Logger
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 
 class TestPlugin: Plugin {
     override fun onTabComplete(
@@ -342,11 +348,15 @@ class TestInventory(
         items[p0] = p1
     }
 
-    override fun addItem(vararg p0: ItemStack?): HashMap<Int, ItemStack> {
+    override fun addItem(vararg p0: ItemStack): HashMap<Int, ItemStack> {
         TODO("Not yet implemented")
     }
 
-    override fun removeItem(vararg p0: ItemStack?): HashMap<Int, ItemStack> {
+    override fun removeItem(vararg p0: ItemStack): HashMap<Int, ItemStack> {
+        TODO("Not yet implemented")
+    }
+
+    override fun removeItemAnySlot(vararg p0: ItemStack): HashMap<Int, ItemStack> {
         TODO("Not yet implemented")
     }
 
@@ -357,7 +367,7 @@ class TestInventory(
             .toTypedArray()
     }
 
-    override fun setContents(p0: Array<out ItemStack>) {
+    override fun setContents(p0: Array<out ItemStack?>?) {
         TODO("Not yet implemented")
     }
 
@@ -365,7 +375,7 @@ class TestInventory(
         TODO("Not yet implemented")
     }
 
-    override fun setStorageContents(p0: Array<out ItemStack>) {
+    override fun setStorageContents(p0: Array<out ItemStack?>?) {
         TODO("Not yet implemented")
     }
 
@@ -429,6 +439,10 @@ class TestInventory(
         TODO("Not yet implemented")
     }
 
+    override fun close(): Int {
+        TODO("Not yet implemented")
+    }
+
     override fun getViewers(): MutableList<HumanEntity> {
         TODO("Not yet implemented")
     }
@@ -441,6 +455,10 @@ class TestInventory(
         TODO("Not yet implemented")
     }
 
+    override fun getHolder(p0: Boolean): InventoryHolder? {
+        TODO("Not yet implemented")
+    }
+
     override fun getLocation(): Location? {
         TODO("Not yet implemented")
     }
@@ -448,6 +466,10 @@ class TestInventory(
 
 class TestPlayer: Player {
     override fun getAttribute(p0: Attribute): AttributeInstance? {
+        TODO("Not yet implemented")
+    }
+
+    override fun registerAttribute(p0: Attribute) {
         TODO("Not yet implemented")
     }
 
@@ -524,11 +546,44 @@ class TestPlayer: Player {
         TODO("Not yet implemented")
     }
 
+
+    override fun sendMessage(message: net.kyori.adventure.text.Component) {
+        println("sendMessage: $message")
+    }
+
+    override fun sendActionBar(p0: String) {
+        TODO("Not yet implemented")
+    }
+
+    override fun sendActionBar(p0: Char, p1: String) {
+        TODO("Not yet implemented")
+    }
+
+    override fun sendActionBar(vararg p0: BaseComponent) {
+        TODO("Not yet implemented")
+    }
+
+    override fun showTitle(p0: Array<out BaseComponent?>?) {
+        TODO("Not yet implemented")
+    }
+
+    override fun showTitle(p0: BaseComponent?) {
+        TODO("Not yet implemented")
+    }
+
+    override fun showTitle(p0: Array<out BaseComponent?>?, p1: Array<out BaseComponent?>?, p2: Int, p3: Int, p4: Int) {
+        TODO("Not yet implemented")
+    }
+
+    override fun showTitle(p0: BaseComponent?, p1: BaseComponent?, p2: Int, p3: Int, p4: Int) {
+        TODO("Not yet implemented")
+    }
+
     override fun sendMessage(p0: String) {
         TODO("Not yet implemented")
     }
 
-    override fun sendMessage(vararg p0: String?) {
+    override fun sendMessage(vararg p0: String) {
         TODO("Not yet implemented")
     }
 
@@ -536,7 +591,7 @@ class TestPlayer: Player {
         TODO("Not yet implemented")
     }
 
-    override fun sendMessage(p0: UUID?, vararg p1: String?) {
+    override fun sendMessage(p0: UUID?, vararg p1: String) {
         TODO("Not yet implemented")
     }
 
@@ -549,6 +604,18 @@ class TestPlayer: Player {
     }
 
     override fun spigot(): Player.Spigot {
+        TODO("Not yet implemented")
+    }
+
+    override fun name(): net.kyori.adventure.text.Component {
+        TODO("Not yet implemented")
+    }
+
+    override fun customName(): net.kyori.adventure.text.Component? {
+        TODO("Not yet implemented")
+    }
+
+    override fun customName(p0: net.kyori.adventure.text.Component?) {
         TODO("Not yet implemented")
     }
 
@@ -668,6 +735,14 @@ class TestPlayer: Player {
         TODO("Not yet implemented")
     }
 
+    override fun isFreezeTickingLocked(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun lockFreezeTicks(p0: Boolean) {
+        TODO("Not yet implemented")
+    }
+
     override fun remove() {
         TODO("Not yet implemented")
     }
@@ -732,8 +807,10 @@ class TestPlayer: Player {
         TODO("Not yet implemented")
     }
 
+    private val uuid = UUID.randomUUID()
+
     override fun getUniqueId(): UUID {
-        return UUID.randomUUID()
+        return uuid
     }
 
     override fun getTicksLived(): Int {
@@ -848,6 +925,62 @@ class TestPlayer: Player {
         TODO("Not yet implemented")
     }
 
+    override fun teamDisplayName(): net.kyori.adventure.text.Component {
+        TODO("Not yet implemented")
+    }
+
+    override fun getOrigin(): Location? {
+        TODO("Not yet implemented")
+    }
+
+    override fun fromMobSpawner(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun getEntitySpawnReason(): CreatureSpawnEvent.SpawnReason {
+        TODO("Not yet implemented")
+    }
+
+    override fun isInRain(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun isInBubbleColumn(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun isInWaterOrRain(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun isInWaterOrBubbleColumn(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun isInWaterOrRainOrBubbleColumn(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun isInLava(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun isTicking(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun getTrackedPlayers(): MutableSet<Player> {
+        TODO("Not yet implemented")
+    }
+
+    override fun spawnAt(p0: Location, p1: CreatureSpawnEvent.SpawnReason): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun isInPowderedSnow(): Boolean {
+        TODO("Not yet implemented")
+    }
+
     override fun damage(p0: Double) {
         TODO("Not yet implemented")
     }
@@ -912,6 +1045,26 @@ class TestPlayer: Player {
         TODO("Not yet implemented")
     }
 
+    override fun getTargetBlock(p0: Int, p1: TargetBlockInfo.FluidMode): Block? {
+        TODO("Not yet implemented")
+    }
+
+    override fun getTargetBlockFace(p0: Int, p1: TargetBlockInfo.FluidMode): BlockFace? {
+        TODO("Not yet implemented")
+    }
+
+    override fun getTargetBlockInfo(p0: Int, p1: TargetBlockInfo.FluidMode): TargetBlockInfo? {
+        TODO("Not yet implemented")
+    }
+
+    override fun getTargetEntity(p0: Int, p1: Boolean): Entity? {
+        TODO("Not yet implemented")
+    }
+
+    override fun getTargetEntityInfo(p0: Int, p1: Boolean): TargetEntityInfo? {
+        TODO("Not yet implemented")
+    }
+
     override fun getLastTwoTargetBlocks(p0: MutableSet<Material>?, p1: Int): MutableList<Block> {
         TODO("Not yet implemented")
     }
@@ -964,6 +1117,22 @@ class TestPlayer: Player {
         TODO("Not yet implemented")
     }
 
+    override fun getBeeStingerCooldown(): Int {
+        TODO("Not yet implemented")
+    }
+
+    override fun setBeeStingerCooldown(p0: Int) {
+        TODO("Not yet implemented")
+    }
+
+    override fun getBeeStingersInBody(): Int {
+        TODO("Not yet implemented")
+    }
+
+    override fun setBeeStingersInBody(p0: Int) {
+        TODO("Not yet implemented")
+    }
+
     override fun getMaximumNoDamageTicks(): Int {
         TODO("Not yet implemented")
     }
@@ -989,6 +1158,10 @@ class TestPlayer: Player {
     }
 
     override fun getKiller(): Player? {
+        TODO("Not yet implemented")
+    }
+
+    override fun setKiller(p0: Player?) {
         TODO("Not yet implemented")
     }
 
@@ -1024,6 +1197,10 @@ class TestPlayer: Player {
         TODO("Not yet implemented")
     }
 
+    override fun hasLineOfSight(p0: Location): Boolean {
+        TODO("Not yet implemented")
+    }
+
     override fun getRemoveWhenFarAway(): Boolean {
         TODO("Not yet implemented")
     }
@@ -1032,7 +1209,7 @@ class TestPlayer: Player {
         TODO("Not yet implemented")
     }
 
-    override fun getEquipment(): EntityEquipment? {
+    override fun getEquipment(): EntityEquipment {
         TODO("Not yet implemented")
     }
 
@@ -1136,6 +1313,38 @@ class TestPlayer: Player {
         TODO("Not yet implemented")
     }
 
+    override fun getArrowsStuck(): Int {
+        TODO("Not yet implemented")
+    }
+
+    override fun setArrowsStuck(p0: Int) {
+        TODO("Not yet implemented")
+    }
+
+    override fun getShieldBlockingDelay(): Int {
+        TODO("Not yet implemented")
+    }
+
+    override fun setShieldBlockingDelay(p0: Int) {
+        TODO("Not yet implemented")
+    }
+
+    override fun getActiveItem(): ItemStack? {
+        TODO("Not yet implemented")
+    }
+
+    override fun clearActiveItem() {
+        TODO("Not yet implemented")
+    }
+
+    override fun getItemUseRemainingTime(): Int {
+        TODO("Not yet implemented")
+    }
+
+    override fun getHandRaisedTime(): Int {
+        TODO("Not yet implemented")
+    }
+
     override fun getInventory(): PlayerInventory {
         TODO("Not yet implemented")
     }
@@ -1188,7 +1397,35 @@ class TestPlayer: Player {
         TODO("Not yet implemented")
     }
 
+    override fun openAnvil(p0: Location?, p1: Boolean): InventoryView? {
+        TODO("Not yet implemented")
+    }
+
+    override fun openCartographyTable(p0: Location?, p1: Boolean): InventoryView? {
+        TODO("Not yet implemented")
+    }
+
+    override fun openGrindstone(p0: Location?, p1: Boolean): InventoryView? {
+        TODO("Not yet implemented")
+    }
+
+    override fun openLoom(p0: Location?, p1: Boolean): InventoryView? {
+        TODO("Not yet implemented")
+    }
+
+    override fun openSmithingTable(p0: Location?, p1: Boolean): InventoryView? {
+        TODO("Not yet implemented")
+    }
+
+    override fun openStonecutter(p0: Location?, p1: Boolean): InventoryView? {
+        TODO("Not yet implemented")
+    }
+
     override fun closeInventory() {
+        TODO("Not yet implemented")
+    }
+
+    override fun closeInventory(p0: InventoryCloseEvent.Reason) {
         TODO("Not yet implemented")
     }
 
@@ -1220,7 +1457,15 @@ class TestPlayer: Player {
         TODO("Not yet implemented")
     }
 
+    override fun isDeeplySleeping(): Boolean {
+        TODO("Not yet implemented")
+    }
+
     override fun getSleepTicks(): Int {
+        TODO("Not yet implemented")
+    }
+
+    override fun getPotentialBedLocation(): Location? {
         TODO("Not yet implemented")
     }
 
@@ -1252,11 +1497,43 @@ class TestPlayer: Player {
         TODO("Not yet implemented")
     }
 
+    override fun getHandRaised(): EquipmentSlot {
+        TODO("Not yet implemented")
+    }
+
+    override fun isJumping(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun setJumping(p0: Boolean) {
+        TODO("Not yet implemented")
+    }
+
+    override fun playPickupItemAnimation(p0: Item, p1: Int) {
+        TODO("Not yet implemented")
+    }
+
+    override fun getHurtDirection(): Float {
+        TODO("Not yet implemented")
+    }
+
+    override fun setHurtDirection(p0: Float) {
+        TODO("Not yet implemented")
+    }
+
     override fun getItemInUse(): ItemStack? {
         TODO("Not yet implemented")
     }
 
     override fun getExpToLevel(): Int {
+        TODO("Not yet implemented")
+    }
+
+    override fun releaseLeftShoulderEntity(): Entity? {
+        TODO("Not yet implemented")
+    }
+
+    override fun releaseRightShoulderEntity(): Entity? {
         TODO("Not yet implemented")
     }
 
@@ -1392,7 +1669,7 @@ class TestPlayer: Player {
         TODO("Not yet implemented")
     }
 
-    override fun getPlayerProfile(): PlayerProfile {
+    override fun getPlayerProfile(): com.destroystokyo.paper.profile.PlayerProfile {
         TODO("Not yet implemented")
     }
 
@@ -1425,6 +1702,14 @@ class TestPlayer: Player {
     }
 
     override fun getBedSpawnLocation(): Location? {
+        TODO("Not yet implemented")
+    }
+
+    override fun getLastLogin(): Long {
+        TODO("Not yet implemented")
+    }
+
+    override fun getLastSeen(): Long {
         TODO("Not yet implemented")
     }
 
@@ -1516,6 +1801,22 @@ class TestPlayer: Player {
         TODO("Not yet implemented")
     }
 
+    override fun playerListName(p0: net.kyori.adventure.text.Component?) {
+        TODO("Not yet implemented")
+    }
+
+    override fun playerListName(): net.kyori.adventure.text.Component {
+        TODO("Not yet implemented")
+    }
+
+    override fun playerListHeader(): net.kyori.adventure.text.Component? {
+        TODO("Not yet implemented")
+    }
+
+    override fun playerListFooter(): net.kyori.adventure.text.Component? {
+        TODO("Not yet implemented")
+    }
+
     override fun getPlayerListName(): String {
         TODO("Not yet implemented")
     }
@@ -1544,6 +1845,14 @@ class TestPlayer: Player {
         TODO("Not yet implemented")
     }
 
+    override fun setPlayerListHeaderFooter(p0: Array<out BaseComponent?>?, p1: Array<out BaseComponent?>?) {
+        TODO("Not yet implemented")
+    }
+
+    override fun setPlayerListHeaderFooter(p0: BaseComponent?, p1: BaseComponent?) {
+        TODO("Not yet implemented")
+    }
+
     override fun setCompassTarget(p0: Location) {
         TODO("Not yet implemented")
     }
@@ -1556,7 +1865,35 @@ class TestPlayer: Player {
         TODO("Not yet implemented")
     }
 
+    override fun getProtocolVersion(): Int {
+        TODO("Not yet implemented")
+    }
+
+    override fun getVirtualHost(): InetSocketAddress? {
+        TODO("Not yet implemented")
+    }
+
+    override fun displayName(): net.kyori.adventure.text.Component {
+        TODO("Not yet implemented")
+    }
+
+    override fun displayName(p0: net.kyori.adventure.text.Component?) {
+        TODO("Not yet implemented")
+    }
+
     override fun kickPlayer(p0: String?) {
+        TODO("Not yet implemented")
+    }
+
+    override fun kick() {
+        TODO("Not yet implemented")
+    }
+
+    override fun kick(p0: net.kyori.adventure.text.Component?) {
+        TODO("Not yet implemented")
+    }
+
+    override fun kick(p0: net.kyori.adventure.text.Component?, p1: PlayerKickEvent.Cause) {
         TODO("Not yet implemented")
     }
 
@@ -1676,23 +2013,52 @@ class TestPlayer: Player {
         TODO("Not yet implemented")
     }
 
+    override fun sendMultiBlockChange(p0: MutableMap<Location, BlockData>, p1: Boolean) {
+        TODO("Not yet implemented")
+    }
+
     override fun sendEquipmentChange(p0: LivingEntity, p1: EquipmentSlot, p2: ItemStack) {
         TODO("Not yet implemented")
     }
 
-    override fun sendSignChange(p0: Location, p1: Array<out String>?) {
+    override fun sendSignChange(
+        p0: Location,
+        p1: MutableList<net.kyori.adventure.text.Component>?,
+        p2: DyeColor,
+        p3: Boolean
+    ) {
         TODO("Not yet implemented")
     }
 
-    override fun sendSignChange(p0: Location, p1: Array<out String>?, p2: DyeColor) {
+    override fun sendSignChange(p0: Location, p1: Array<out String?>?) {
         TODO("Not yet implemented")
     }
 
-    override fun sendSignChange(p0: Location, p1: Array<out String>?, p2: DyeColor, p3: Boolean) {
+    override fun sendSignChange(p0: Location, p1: Array<out String?>?, p2: DyeColor) {
+        TODO("Not yet implemented")
+    }
+
+    override fun sendSignChange(p0: Location, p1: Array<out String?>?, p2: DyeColor, p3: Boolean) {
         TODO("Not yet implemented")
     }
 
     override fun sendMap(p0: MapView) {
+        TODO("Not yet implemented")
+    }
+
+    override fun setTitleTimes(p0: Int, p1: Int, p2: Int) {
+        TODO("Not yet implemented")
+    }
+
+    override fun setSubtitle(p0: Array<out BaseComponent>?) {
+        TODO("Not yet implemented")
+    }
+
+    override fun setSubtitle(p0: BaseComponent?) {
+        TODO("Not yet implemented")
+    }
+
+    override fun sendTitle(p0: Title) {
         TODO("Not yet implemented")
     }
 
@@ -1737,6 +2103,14 @@ class TestPlayer: Player {
     }
 
     override fun giveExp(p0: Int) {
+        TODO("Not yet implemented")
+    }
+
+    override fun giveExp(p0: Int, p1: Boolean) {
+        TODO("Not yet implemented")
+    }
+
+    override fun applyMending(p0: Int): Int {
         TODO("Not yet implemented")
     }
 
@@ -1864,6 +2238,22 @@ class TestPlayer: Player {
         TODO("Not yet implemented")
     }
 
+    override fun setResourcePack(p0: String, p1: ByteArray?, p2: net.kyori.adventure.text.Component?, p3: Boolean) {
+        TODO("Not yet implemented")
+    }
+
+    override fun setResourcePack(p0: String, p1: String) {
+        TODO("Not yet implemented")
+    }
+
+    override fun setResourcePack(p0: String, p1: String, p2: Boolean) {
+        TODO("Not yet implemented")
+    }
+
+    override fun setResourcePack(p0: String, p1: String, p2: Boolean, p3: net.kyori.adventure.text.Component?) {
+        TODO("Not yet implemented")
+    }
+
     override fun getScoreboard(): Scoreboard {
         TODO("Not yet implemented")
     }
@@ -1896,6 +2286,14 @@ class TestPlayer: Player {
         TODO("Not yet implemented")
     }
 
+    override fun sendHealthUpdate(p0: Double, p1: Int, p2: Float) {
+        TODO("Not yet implemented")
+    }
+
+    override fun sendHealthUpdate() {
+        TODO("Not yet implemented")
+    }
+
     override fun getSpectatorTarget(): Entity? {
         TODO("Not yet implemented")
     }
@@ -1909,6 +2307,14 @@ class TestPlayer: Player {
     }
 
     override fun sendTitle(p0: String?, p1: String?, p2: Int, p3: Int, p4: Int) {
+        TODO("Not yet implemented")
+    }
+
+    override fun updateTitle(p0: Title) {
+        TODO("Not yet implemented")
+    }
+
+    override fun hideTitle() {
         TODO("Not yet implemented")
     }
 
@@ -2051,11 +2457,55 @@ class TestPlayer: Player {
         TODO("Not yet implemented")
     }
 
+    override fun locale(): Locale {
+        TODO("Not yet implemented")
+    }
+
     override fun getPing(): Int {
         TODO("Not yet implemented")
     }
 
     override fun getLocale(): String {
+        TODO("Not yet implemented")
+    }
+
+    override fun getAffectsSpawning(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun setAffectsSpawning(p0: Boolean) {
+        TODO("Not yet implemented")
+    }
+
+    override fun getViewDistance(): Int {
+        TODO("Not yet implemented")
+    }
+
+    override fun setViewDistance(p0: Int) {
+        TODO("Not yet implemented")
+    }
+
+    override fun getSimulationDistance(): Int {
+        TODO("Not yet implemented")
+    }
+
+    override fun setSimulationDistance(p0: Int) {
+        TODO("Not yet implemented")
+    }
+
+    override fun getNoTickViewDistance(): Int {
+        TODO("Not yet implemented")
+    }
+
+    override fun setNoTickViewDistance(p0: Int) {
+        TODO("Not yet implemented")
+    }
+
+    override fun getSendViewDistance(): Int {
+        TODO("Not yet implemented")
+    }
+
+    override fun setSendViewDistance(p0: Int) {
         TODO("Not yet implemented")
     }
 
@@ -2076,6 +2526,50 @@ class TestPlayer: Player {
     }
 
     override fun isAllowingServerListings(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun getResourcePackStatus(): PlayerResourcePackStatusEvent.Status? {
+        TODO("Not yet implemented")
+    }
+
+    override fun getResourcePackHash(): String? {
+        TODO("Not yet implemented")
+    }
+
+    override fun hasResourcePack(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun setPlayerProfile(p0: com.destroystokyo.paper.profile.PlayerProfile) {
+        TODO("Not yet implemented")
+    }
+
+    override fun getCooldownPeriod(): Float {
+        TODO("Not yet implemented")
+    }
+
+    override fun getCooledAttackStrength(p0: Float): Float {
+        TODO("Not yet implemented")
+    }
+
+    override fun resetCooldown() {
+        TODO("Not yet implemented")
+    }
+
+    override fun <T : Any?> getClientOption(p0: ClientOption<T>): T {
+        TODO("Not yet implemented")
+    }
+
+    override fun boostElytra(p0: ItemStack): Firework? {
+        TODO("Not yet implemented")
+    }
+
+    override fun sendOpLevel(p0: Byte) {
+        TODO("Not yet implemented")
+    }
+
+    override fun getClientBrandName(): String? {
         TODO("Not yet implemented")
     }
 }
@@ -2163,17 +2657,29 @@ class TestWindow(
     }
 
     override fun toString(): String {
-        val height = this.renderable?.height ?: 0
-
-        if(height == 0) {
-            return "Empty window"
-        }
+        val height = this.renderable?.height ?: return "Empty window"
 
         return (0 until height)
             .joinToString("\n") { y ->
-                inventory.contents.toList()
-                    .subList(y * 9, y * 9 + 9)
-                    .toString()
+                inventory.contents?.toList()
+                    ?.subList(y * 9, y * 9 + 9)
+                    ?.toString() ?: "empty"
             }
+    }
+}
+
+fun Component.extend(mapper: (Observable<Map<String, Any?>>) -> Observable<Map<String, Any?>>) = object : Component {
+    override val template
+        get() = this@extend.template
+
+    override val props: List<Prop>
+        get() = this@extend.props
+
+    override val imports: Map<String, Component>
+        get() = this@extend.imports
+
+    override fun setup(context: SetupContext): Observable<Map<String, Any?>> {
+        return this@extend.setup(context)
+            .compose { mapper(it) }
     }
 }

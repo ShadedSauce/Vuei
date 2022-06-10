@@ -12,27 +12,20 @@ class HtmlLanguageTest {
     fun testAttributes() {
         val language = HtmlLanguage(TestItemFactory())
         val context = DequeParserContext("""
-            <a some-attr="some value" some-other-attr="some other value" />
-        """.trimIndent())
+            <a 
+                some-attr="some value" 
+                some-other-attr="some other value"
+                :some-binding="someVal"
+                @some-event="someEvent"
+            />
+        """)
 
         val document = language.parse(context).first()
 
         assertEquals(document.values["some-attr"], "some value")
         assertEquals(document.values["some-other-attr"], "some other value")
-    }
-
-    @Test
-    fun testArrays() {
-        val language = HtmlLanguage(TestItemFactory())
-        val context = DequeParserContext("""
-            <tag array="['some value', 'some other value']" />
-        """.trimIndent())
-
-        val document = language.parse(context).first()
-        val array = document.values["array"] as? List<String>
-
-        assertNotNull(array)
-        assertEquals(array, listOf("some value", "some other value"))
+        assertEquals(document.bindings["some-binding"], "someVal")
+        assertEquals(document.bindings["emit:some-event"], "someEvent")
     }
 
     @Test

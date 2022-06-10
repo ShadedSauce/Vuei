@@ -43,7 +43,11 @@ class HtmlLanguage(
 
         scope.skipWhitespace()
 
-        while(context.peek()?.isLetterOrDigit() == true || scope.peek() == ':') {
+        while(
+            context.peek()?.isLetterOrDigit() == true ||
+                scope.peek() == ':' ||
+                scope.peek() == '@'
+        ) {
             val attribute = parseAttribute(scope, bindings, values)
 
             scope = attribute.context
@@ -92,7 +96,8 @@ class HtmlLanguage(
     ): AttributeResult {
         val scope = context
         var loop: For? = null
-        val binding = scope.peek() == ':'
+        val event = scope.peek() == '@'
+        val binding = scope.peek() == ':' || event
 
         if(binding) {
             scope.read()
@@ -100,6 +105,10 @@ class HtmlLanguage(
 
         val attribute = scope.readUntil { !it.isLetter() && it != '-' }
             ?.takeIf { it.isNotBlank() }
+            ?.let {
+                if(event) "emit:$it"
+                else it
+            }
             ?: throw scope.createSyntaxError("Expected attribute name")
 
         scope.expect("=\"")
@@ -169,7 +178,7 @@ data class AttributeResult(
     val loop: For?
 )
 
-fun Any.invoke(vararg args: Any): Any {
+fun Any.invoke(vararg args: Any?): Any {
     val invoke = this.javaClass.methods.find { it.name == "invoke" }
 
     return if(invoke != null) {

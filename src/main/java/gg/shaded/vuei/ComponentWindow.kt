@@ -116,6 +116,7 @@ open class ComponentWindow(
                     errorHandler.handle(t)
                     // Prevent CME
                     ArrayList(viewers).forEach { it.closeInventory() }
+                    dispose()
                 }
             )
     }
@@ -145,8 +146,8 @@ open class ComponentWindow(
         cancellable: Cancellable
     ) {
         var slot = rawSlot
-        val inventory = this.inventory
         val layout = this.renderable ?: return
+        val inventory = this.inventory
 
         if(slot < 0) {
             return
@@ -232,9 +233,8 @@ open class ComponentWindow(
 
     @EventHandler
     fun onClose(event: InventoryCloseEvent) {
-        if(event.inventory !== inventory || ignoreClose) {
-            return
-        }
+        if(this.renderable == null) return
+        if(event.inventory !== inventory || ignoreClose) return
 
         // 0 after close
         if(event.viewers.size == 1) {

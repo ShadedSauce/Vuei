@@ -18,7 +18,7 @@ interface Component {
 
     fun setupWithQueue(context: SetupContext): Observable<Map<String, Any?>> {
         return setup(context)
-            .map { it.plus("setup" to context) }
+            .map { it.plus("ctx" to context) }
             .mergeWith(context.queue)
     }
 }
@@ -43,6 +43,12 @@ class RequiredProp(
         value ?: throw IllegalArgumentException("Required prop '$name' not present.")
 }
 
+class OptionalProp(
+    override val name: String,
+): Prop {
+    override fun validate(value: Any?) = value
+}
+
 interface SetupContext {
     val props: Map<String, Any?>
 
@@ -50,10 +56,8 @@ interface SetupContext {
 
     val queue: Completable
         get() = tasks.flatMapCompletable { it }
-    fun emit(vararg e: Any) {
-        val emitter = props["emit"] ?: throw IllegalStateException("Emit not defined.")
-
-        emitter.invoke(*e)
+    fun emit(e: String, vararg args: Any?) {
+        props["emit:$e"]?.invoke(*args)
     }
 
     fun enqueue(task: Completable) {

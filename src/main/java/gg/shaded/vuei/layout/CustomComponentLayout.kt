@@ -1,5 +1,6 @@
 package gg.shaded.vuei.layout
 
+import gg.shaded.vuei.OptionalProp
 import gg.shaded.vuei.Renderable
 import gg.shaded.vuei.SimpleSetupContext
 import gg.shaded.vuei.observe
@@ -25,12 +26,20 @@ class CustomComponentLayout(
             .associate { it.values["slot"] as String to it.children }
 
         val props = component.props
+            .plus(
+                context.element.bindings.keys.filter { it.startsWith("emit:") }
+                    .map { OptionalProp(it) }
+            )
             .associate { prop ->
                 val binding = context.getAttributeBinding(prop.name)
 
-                val validated = prop.validate(
-                    context.getAttributeBinding(prop.name)
-                ) ?: binding
+                val validated = try {
+                    prop.validate(
+                        context.getAttributeBinding(prop.name)
+                    ) ?: binding
+                } catch (t: Throwable) {
+                    throw RuntimeException("Validation failed for $component", t)
+                }
 
                 prop.name to validated
             }

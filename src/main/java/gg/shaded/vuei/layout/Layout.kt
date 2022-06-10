@@ -90,9 +90,10 @@ class SimpleLayoutContext(
 
     override fun getBinding(binding: String): Any? {
         val result = try {
-            val callable = jsContext.eval("js", "(${this.bindings.keys.joinToString()}) => $binding")
+            val bindings = this.bindings.filterKeys { !it.contains(":") }
+            val callable = jsContext.eval("js", "(${bindings.keys.joinToString()}) => $binding")
 
-            callable.execute(*this.bindings.values.toTypedArray())
+            callable.execute(*bindings.values.toTypedArray())
         } catch(e: Exception) {
             throw RuntimeException("Error in $binding", e)
         }
