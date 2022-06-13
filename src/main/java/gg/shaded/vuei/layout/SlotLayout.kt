@@ -7,6 +7,7 @@ import io.reactivex.rxjava3.core.Observable
 class SlotLayout: Layout {
     override fun allocate(context: LayoutContext): Observable<List<Renderable>> {
         val name = context.element.values["name"] ?: "default"
+        println("found slot: ${context.slots[name]}")
         val templates = context.slots[name] ?: return Observable.just(ArrayList())
         val superContext = context.superContext ?: context
 

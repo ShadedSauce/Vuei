@@ -3,7 +3,6 @@ package gg.shaded.vuei.layout
 import gg.shaded.vuei.OptionalProp
 import gg.shaded.vuei.Renderable
 import gg.shaded.vuei.SimpleSetupContext
-import gg.shaded.vuei.observe
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.subjects.PublishSubject
 import java.lang.IllegalStateException
@@ -14,7 +13,7 @@ class CustomComponentLayout(
     override fun allocate(context: LayoutContext): Observable<List<Renderable>> {
         val component = context.components[name]
             ?: throw IllegalStateException("$name has no layout.")
-        val element = component.template.element
+        val elements = component.template.elements
 
         val defaultSlot = context.element.children.filterNot {
             it.values.containsKey("slot")
@@ -49,14 +48,25 @@ class CustomComponentLayout(
 
         return component.setupWithQueue(SimpleSetupContext(props, PublishSubject.create()))
             .map { bindings ->
-                context.copy(
-                    superContext = context,
-                    element = element,
-                    bindings = bindings.plus(props),
-                    components = component.imports,
-                    slots = namedSlots.plus("default" to defaultSlot)
-                )
+                elements.map { element ->
+                    context.copy(
+                        superContext = context,
+                        element = element,
+                        bindings = bindings.plus(props),
+                        components = component.imports,
+                        slots = namedSlots.let {
+                            if(defaultSlot.isNotEmpty()) it.plus("default" to defaultSlot)
+                            else it
+                        }
+                    ).let(element.layout::allocate)
+                }
             }
-            .switchMap { ctx -> element.layout.allocate(ctx) }
+            .switchMap { allocations ->
+                Observable.combineLatest(allocations) { renderables ->
+                    renderables
+                        .map { it as List<Renderable> }
+                        .flatten()
+                }
+            }
     }
 }

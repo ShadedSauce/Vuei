@@ -1,7 +1,4 @@
-import gg.shaded.vuei.DequeParserContext
-import gg.shaded.vuei.HtmlLanguage
-import gg.shaded.vuei.ItemFactory
-import gg.shaded.vuei.TestItemFactory
+import gg.shaded.vuei.*
 import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
 import org.junit.jupiter.api.Assertions.*
@@ -10,7 +7,7 @@ import org.junit.jupiter.api.Test
 class HtmlLanguageTest {
     @Test
     fun testAttributes() {
-        val language = HtmlLanguage(TestItemFactory())
+        val language = HtmlLanguage(TestItemFactory(), SimpleI18n())
         val context = DequeParserContext("""
             <a 
                 some-attr="some value" 
@@ -30,7 +27,7 @@ class HtmlLanguageTest {
 
     @Test
     fun testNesting() {
-        val language = HtmlLanguage(TestItemFactory())
+        val language = HtmlLanguage(TestItemFactory(), SimpleI18n())
         val context = DequeParserContext("""
             <parent>
                 <child>

@@ -9,6 +9,7 @@ import org.graalvm.polyglot.Value
 
 class HtmlLanguage(
     private val itemFactory: ItemFactory,
+    private val i18n: I18n
 ): Parser<List<Element>> {
     override fun parse(context: ParserContext): List<Element> {
         val elements = ArrayList<Element>()
@@ -81,7 +82,7 @@ class HtmlLanguage(
         val layout = ForLayout(
             IfLayout(
                 ClickableLayout(
-                    DerivedLayout(tag, itemFactory)
+                    DerivedLayout(tag, itemFactory, i18n)
                 )
             )
         )
@@ -105,10 +106,7 @@ class HtmlLanguage(
 
         val attribute = scope.readUntil { !it.isLetter() && it != '-' }
             ?.takeIf { it.isNotBlank() }
-            ?.let {
-                if(event) "emit:$it"
-                else it
-            }
+            ?.let { if(event) "emit:$it" else it  }
             ?: throw scope.createSyntaxError("Expected attribute name")
 
         scope.expect("=\"")
@@ -129,31 +127,6 @@ class HtmlLanguage(
         scope.skipWhitespace()
 
         return AttributeResult(scope, loop)
-    }
-
-    private fun parseArray(context: ParserContext): List<String> {
-        val array = ArrayList<String>()
-
-        context.expect("[")
-        context.skipWhitespace()
-
-        while(context.peek() == '\'') {
-            context.expect("'")
-            val value = context.readUntil { it == '\'' }
-                ?: throw context.createSyntaxError("Expected array value.")
-            context.expect("'")
-
-            if(context.peek() == ',') {
-                context.expect(",")
-                context.skipWhitespace()
-            }
-
-            array.add(value)
-        }
-
-        context.skipWhitespace()
-        context.expect("]")
-        return array
     }
 
     private fun parseFor(context: ParserContext): For {

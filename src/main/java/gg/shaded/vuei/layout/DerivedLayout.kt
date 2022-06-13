@@ -1,6 +1,7 @@
 package gg.shaded.vuei.layout
 
 import gg.shaded.vuei.Element
+import gg.shaded.vuei.I18n
 import gg.shaded.vuei.ItemFactory
 import gg.shaded.vuei.Renderable
 import gg.shaded.vuei.layout.ColumnCenterLayout
@@ -9,6 +10,7 @@ import io.reactivex.rxjava3.core.Observable
 class DerivedLayout(
     private val layout: String,
     itemFactory: ItemFactory,
+    i18n: I18n
 ): Layout {
     private val layouts = mapOf(
         "window" to DocumentLayout(),
@@ -18,7 +20,7 @@ class DerivedLayout(
         "row-c" to RowCenterLayout(),
         "col-s" to ColumnStartLayout(),
         "col-c" to ColumnCenterLayout(),
-        "icon" to IconLayout(itemFactory),
+        "icon" to IconLayout(itemFactory, i18n),
         "padding" to PaddingLayout(),
         "slot" to SlotLayout(),
         "template" to TemplateLayout(),

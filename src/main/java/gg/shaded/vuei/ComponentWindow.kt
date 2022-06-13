@@ -38,7 +38,7 @@ open class ComponentWindow(
     private val errorHandler: ErrorHandler,
     private val root: Component
 ): Window, Listener {
-    private var document: Element = root.template.element
+    private var document: Element = root.template.elements.first()
 
     protected open var renderable: Renderable? = null
         set(value) {
@@ -183,7 +183,16 @@ open class ComponentWindow(
 
         cancellable.isCancelled = true
 
-        Completable.fromAction { layout.click(x, y, context) }
+        scheduleClick(context, layout, x, y)
+    }
+
+    protected open fun scheduleClick(
+        context: ClickContext,
+        renderable: Renderable,
+        x: Int,
+        y: Int
+    ) {
+        Completable.fromAction { renderable.click(x, y, context) }
             .subscribeOn(contextScheduler)
             .subscribe(
                 {},

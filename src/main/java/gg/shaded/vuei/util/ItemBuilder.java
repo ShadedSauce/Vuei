@@ -1,6 +1,7 @@
 package gg.shaded.vuei.util;
 
 import com.google.common.base.Preconditions;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
@@ -141,6 +142,11 @@ public final class ItemBuilder {
         return this;
     }
 
+    public ItemBuilder name(Component name) {
+        this.meta.displayName(name);
+        return this;
+    }
+
     public ItemBuilder name(Function<String, String> nameApplier) {
         String name = meta.hasDisplayName() ? meta.getDisplayName() : "";
 
@@ -169,6 +175,11 @@ public final class ItemBuilder {
      */
     public ItemBuilder lore(List<String> lore) {
         meta.setLore(lore);
+        return this;
+    }
+
+    public ItemBuilder description(List<Component> components) {
+        meta.lore(components);
         return this;
     }
 

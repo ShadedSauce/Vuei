@@ -2642,6 +2642,10 @@ class TestWindow(
         )
     }
 
+    override fun scheduleClick(context: ClickContext, renderable: Renderable, x: Int, y: Int) {
+        renderable.click(x, y, context)
+    }
+
     fun awaitRedraw(timeout: Long = 1000L) {
         val old = this.renderable
         var elapsed = 0L
@@ -2658,6 +2662,8 @@ class TestWindow(
 
     override fun toString(): String {
         val height = this.renderable?.height ?: return "Empty window"
+
+        if(height <= 0) return "Empty window"
 
         return (0 until height)
             .joinToString("\n") { y ->
