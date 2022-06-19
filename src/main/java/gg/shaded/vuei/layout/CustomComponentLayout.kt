@@ -46,7 +46,15 @@ class CustomComponentLayout(
                 context.element.values.mapValues { Observable.just(it.value) }
             )
 
-        return component.setupWithQueue(SimpleSetupContext(props, PublishSubject.create()))
+        println("creating component on ${Thread.currentThread()}")
+        return component.setupWithQueue(
+            SimpleSetupContext(
+                props,
+                PublishSubject.create(),
+                context.uiScheduler,
+                context.backgroundScheduler
+            )
+        )
             .map { bindings ->
                 elements.map { element ->
                     context.copy(

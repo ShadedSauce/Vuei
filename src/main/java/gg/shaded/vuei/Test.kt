@@ -2606,7 +2606,7 @@ class TestWindow(
     renderer: Renderer = InventoryRenderer(inventoryProvider),
     scheduler: Scheduler,
     root: Component,
-    errorHandler: ErrorHandler = ErrorHandler { it.printStackTrace() },
+    errorHandler: ErrorHandler = ErrorHandler { t, _ -> t.printStackTrace() },
     private val callback: ((TestWindow, Inventory, Renderable) -> Unit)? = null
 ): ComponentWindow(
     plugin,

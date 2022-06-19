@@ -34,7 +34,7 @@ open class ComponentWindow(
     pluginManager: PluginManager = Bukkit.getPluginManager(),
     private val inventoryProvider: InventoryProvider = CachedInventoryProvider(),
     private val renderer: Renderer = InventoryRenderer(inventoryProvider),
-    private val scheduler: Scheduler = Schedulers.from { r -> Bukkit.getScheduler().runTask(plugin, r) },
+    private val mainScheduler: Scheduler = Schedulers.from { r -> Bukkit.getScheduler().runTask(plugin, r) },
     private val errorHandler: ErrorHandler,
     private val root: Component
 ): Window, Listener {
@@ -67,15 +67,20 @@ open class ComponentWindow(
     private var ignoreClose: Boolean = false
     private val contexts = HashSet<LayoutContext>()
 
-    private val contextScheduler = Schedulers.from(
+    private val uiScheduler = Schedulers.from(
         Executors.newSingleThreadExecutor { r ->
             thread(
                 contextClassLoader = ClassLoader.getSystemClassLoader(),
+                name = "Component Window UI Thread",
                 start = false
             ) {
                 r.run()
             }
         }
+    )
+
+    private val backgroundScheduler = Schedulers.from(
+        Executors.newSingleThreadExecutor()
     )
 
     init {
@@ -94,10 +99,15 @@ open class ComponentWindow(
     }
 
     private fun start() {
-        contextScheduler.scheduleDirect {  }
-
         subscription = Observable.defer {
-            root.setupWithQueue(SimpleSetupContext(HashMap(), PublishSubject.create()))
+            root.setupWithQueue(
+                SimpleSetupContext(
+                    HashMap(),
+                    PublishSubject.create(),
+                    uiScheduler,
+                    backgroundScheduler
+                )
+            )
         }
             .switchMap { bindings ->
                 document.layout.allocate(createLayoutContext(
@@ -106,14 +116,14 @@ open class ComponentWindow(
                     bindings
                 ))
             }
-            .subscribeOn(contextScheduler)
-            .debounce(50, TimeUnit.MILLISECONDS, contextScheduler) // 1 tick
+            .subscribeOn(uiScheduler)
+            .debounce(50, TimeUnit.MILLISECONDS, uiScheduler) // 1 tick
             .map { it.first() }
-            .observeOn(scheduler)
+            .observeOn(mainScheduler)
             .subscribe(
                 { renderable -> this.renderable = renderable },
                 { t ->
-                    errorHandler.handle(t)
+                    errorHandler.handle(t, viewers)
                     // Prevent CME
                     ArrayList(viewers).forEach { it.closeInventory() }
                     dispose()
@@ -133,7 +143,9 @@ open class ComponentWindow(
             ),
             bindings,
             root.imports,
-            slots = HashMap()
+            slots = HashMap(),
+            uiScheduler,
+            backgroundScheduler
         ).also { contexts.add(it) }
 
     private fun triggerClick(
@@ -193,10 +205,10 @@ open class ComponentWindow(
         y: Int
     ) {
         Completable.fromAction { renderable.click(x, y, context) }
-            .subscribeOn(contextScheduler)
+            .subscribeOn(uiScheduler)
             .subscribe(
                 {},
-                errorHandler::handle
+                { t -> errorHandler.handle(t, viewers) }
             )
     }
 

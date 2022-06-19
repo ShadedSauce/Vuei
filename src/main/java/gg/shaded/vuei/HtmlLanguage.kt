@@ -193,6 +193,5 @@ fun createJavaScriptContext(engine: Engine): Context =
     Context.newBuilder("js")
         .engine(engine)
         .allowAllAccess(true)
-        .allowCreateThread(false)
         .allowHostAccess(hostAccess)
         .build()

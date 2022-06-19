@@ -2,6 +2,7 @@ package gg.shaded.vuei
 
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.core.Scheduler
 import io.reactivex.rxjava3.subjects.PublishSubject
 
 interface Component {
@@ -54,21 +55,35 @@ interface SetupContext {
 
     val tasks: PublishSubject<Completable>
 
+    val uiScheduler: Scheduler
+
+    val backgroundScheduler: Scheduler
+
     val queue: Completable
         get() = tasks.flatMapCompletable { it }
+
     fun emit(e: String, vararg args: Any?) {
-        props["emit:$e"]?.invoke(*args)
+        try {
+            props["emit:$e"]?.invoke(*args)
+        }
+        catch(t: Throwable) {
+            throw RuntimeException("Error emitting $e in $this.", t)
+        }
     }
 
-    fun enqueue(task: Completable) {
-        tasks.onNext(task)
-    }
+    fun enqueue(task: Completable)
 }
 
 class SimpleSetupContext(
     override val props: Map<String, Any?>,
-    override val tasks: PublishSubject<Completable>
-): SetupContext
+    override val tasks: PublishSubject<Completable>,
+    override val uiScheduler: Scheduler,
+    override val backgroundScheduler: Scheduler
+): SetupContext {
+    override fun enqueue(task: Completable) {
+        tasks.onNext(task)
+    }
+}
 
 fun Map<String, Any?>.sync(): Observable<Map<String, Any?>>
     = Observable.just(this)
