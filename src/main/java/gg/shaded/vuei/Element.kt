@@ -24,22 +24,26 @@ class SimpleElement(
     override val bindings: Map<String, String>,
     override val values: Map<String, Any>,
     override val loop: For?,
-): Element
+): Element {
+    override fun toString(): String {
+        return "SimpleElement(layout=$layout)"
+    }
+}
 
 fun List<Element>.allocate(
     context: LayoutContext,
     bindings: Map<String, Observable<out Any>>? = null
-) = Observable.combineLatest(
-        this.map { child ->
-            child.layout.allocate(
-                context.copy(
-                    element = child,
-                    bindings = context.bindings.plus(bindings ?: HashMap())
-                )
+) = if(this.isEmpty()) Observable.just(emptyList()) else Observable.combineLatest(
+    this.map { child ->
+        child.layout.allocate(
+            context.copy(
+                element = child,
+                bindings = context.bindings.plus(bindings ?: HashMap())
             )
-        }
-    ) { children ->
-        children
-            .flatMap { it as List<Renderable> }
-            .toList()
+        )
     }
+) { children ->
+    children
+        .flatMap { it as List<Renderable> }
+        .toList()
+}

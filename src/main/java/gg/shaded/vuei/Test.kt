@@ -7,6 +7,7 @@ import com.destroystokyo.paper.entity.TargetEntityInfo
 import gg.shaded.vuei.*
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Scheduler
+import io.reactivex.rxjava3.schedulers.Schedulers
 import net.kyori.adventure.audience.MessageType
 import net.kyori.adventure.identity.Identity
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
@@ -2604,7 +2605,7 @@ class TestWindow(
     private val pluginManager: PluginManager = TestPluginManager(),
     inventoryProvider: InventoryProvider = TestInventoryProvider(),
     renderer: Renderer = InventoryRenderer(inventoryProvider),
-    scheduler: Scheduler,
+    scheduler: Scheduler = Schedulers.single(),
     root: Component,
     errorHandler: ErrorHandler = ErrorHandler { t, _ -> t.printStackTrace() },
     private val callback: ((TestWindow, Inventory, Renderable) -> Unit)? = null
@@ -2646,7 +2647,7 @@ class TestWindow(
         renderable.click(x, y, context)
     }
 
-    fun awaitRedraw(timeout: Long = 1000L) {
+    fun awaitRedraw(timeout: Long = 2000L) {
         val old = this.renderable
         var elapsed = 0L
 

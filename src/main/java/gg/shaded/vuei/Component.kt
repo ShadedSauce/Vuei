@@ -59,6 +59,8 @@ interface SetupContext {
 
     val backgroundScheduler: Scheduler
 
+    val errorHandler: ErrorHandler
+
     val queue: Completable
         get() = tasks.flatMapCompletable { it }
 
@@ -67,9 +69,19 @@ interface SetupContext {
             props["emit:$e"]?.invoke(*args)
         }
         catch(t: Throwable) {
-            throw RuntimeException("Error emitting $e in $this.", t)
+            throw t
+            throw RuntimeException("Error emitting $e.", t)
         }
     }
+
+    fun throwError(t: Throwable) {
+        tasks.onError(t)
+    }
+
+    fun <T> getProp(prop: String) = props[prop] as? T
+
+    fun <T> getRequiredProp(prop: String) = props[prop] as? T
+        ?: throw IllegalStateException("Required prop '$prop' not present.")
 
     fun enqueue(task: Completable)
 }
@@ -78,7 +90,8 @@ class SimpleSetupContext(
     override val props: Map<String, Any?>,
     override val tasks: PublishSubject<Completable>,
     override val uiScheduler: Scheduler,
-    override val backgroundScheduler: Scheduler
+    override val backgroundScheduler: Scheduler,
+    override val errorHandler: ErrorHandler
 ): SetupContext {
     override fun enqueue(task: Completable) {
         tasks.onNext(task)

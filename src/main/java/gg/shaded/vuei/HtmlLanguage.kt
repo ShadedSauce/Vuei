@@ -189,6 +189,7 @@ private val hostAccess = HostAccess.newBuilder(HostAccess.ALL)
         { v -> v.hasArrayElements() }
     ) { v -> ArrayList(v.`as`(List::class.java)) }
     .build()
+
 fun createJavaScriptContext(engine: Engine): Context =
     Context.newBuilder("js")
         .engine(engine)

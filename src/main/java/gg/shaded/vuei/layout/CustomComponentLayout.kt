@@ -46,13 +46,13 @@ class CustomComponentLayout(
                 context.element.values.mapValues { Observable.just(it.value) }
             )
 
-        println("creating component on ${Thread.currentThread()}")
         return component.setupWithQueue(
             SimpleSetupContext(
                 props,
                 PublishSubject.create(),
                 context.uiScheduler,
-                context.backgroundScheduler
+                context.backgroundScheduler,
+                context.errorHandler
             )
         )
             .map { bindings ->

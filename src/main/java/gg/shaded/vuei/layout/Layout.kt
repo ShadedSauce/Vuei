@@ -33,6 +33,8 @@ interface LayoutContext: AutoCloseable {
 
     val backgroundScheduler: Scheduler
 
+    val errorHandler: ErrorHandler
+
     fun copy(
         superContext: LayoutContext? = null,
         jsContext: Context? = null,
@@ -42,7 +44,8 @@ interface LayoutContext: AutoCloseable {
         components: Map<String, Component>? = null,
         slots: Map<String, List<Element>>? = null,
         uiScheduler: Scheduler? = null,
-        backgroundScheduler: Scheduler? = null
+        backgroundScheduler: Scheduler? = null,
+        errorHandler: ErrorHandler? = null
     ): LayoutContext
 
     fun getAttributeBinding(key: String): Any? {
@@ -69,6 +72,7 @@ class SimpleLayoutContext(
     override val slots: Map<String, List<Element>>,
     override val uiScheduler: Scheduler,
     override val backgroundScheduler: Scheduler,
+    override val errorHandler: ErrorHandler
 ): LayoutContext {
     private val closeables = HashSet<AutoCloseable>()
     private val children = HashSet<LayoutContext>()
@@ -87,7 +91,8 @@ class SimpleLayoutContext(
         components: Map<String, Component>?,
         slots: Map<String, List<Element>>?,
         uiScheduler: Scheduler?,
-        backgroundScheduler: Scheduler?
+        backgroundScheduler: Scheduler?,
+        errorHandler: ErrorHandler?
     ): LayoutContext {
         return SimpleLayoutContext(
             superContext ?: this.superContext,
@@ -98,14 +103,14 @@ class SimpleLayoutContext(
             components ?: this.components,
             slots ?: this.slots,
             uiScheduler ?: this.uiScheduler,
-            backgroundScheduler ?: this.backgroundScheduler
+            backgroundScheduler ?: this.backgroundScheduler,
+            errorHandler ?: this.errorHandler
         ).also { children.add(it) }
     }
 
     override fun getBinding(binding: String): Any? {
         val result = try {
             val bindings = this.bindings.filterKeys { !it.contains(":") }
-            println("requesting binding on ${Thread.currentThread()} ${Thread.currentThread().hashCode()}, $jsContext")
             val callable = jsContext.eval("js", "(${bindings.keys.joinToString()}) => $binding")
 
             callable.execute(*bindings.values.toTypedArray()).unwrap()

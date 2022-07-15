@@ -8,6 +8,6 @@ interface I18n {
 
 class SimpleI18n: I18n {
     override fun translate(string: String, vararg args: Any): Component {
-        return Component.text(string.format(args))
+        return Component.text(string.format(*args))
     }
 }

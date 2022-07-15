@@ -105,7 +105,8 @@ open class ComponentWindow(
                     HashMap(),
                     PublishSubject.create(),
                     uiScheduler,
-                    backgroundScheduler
+                    backgroundScheduler,
+                    errorHandler
                 )
             )
         }
@@ -145,7 +146,8 @@ open class ComponentWindow(
             root.imports,
             slots = HashMap(),
             uiScheduler,
-            backgroundScheduler
+            backgroundScheduler,
+            errorHandler
         ).also { contexts.add(it) }
 
     private fun triggerClick(
@@ -214,7 +216,7 @@ open class ComponentWindow(
 
     protected open fun dispose() {
         contexts.forEach(AutoCloseable::close)
-        jsContext?.close()
+        jsContext?.close(true)
         subscription?.dispose()
         HandlerList.unregisterAll(this)
     }

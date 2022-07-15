@@ -37,6 +37,10 @@ class ForLayout(
                 }
             } ?: layout.allocate(context)
     }
+
+    override fun toString(): String {
+        return "ForLayout(layout=$layout)"
+    }
 }
 
 data class For(

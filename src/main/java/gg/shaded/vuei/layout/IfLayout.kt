@@ -23,4 +23,8 @@ class IfLayout(
             }
         }
     }
+
+    override fun toString(): String {
+        return "IfLayout(layout=$layout)"
+    }
 }

@@ -8,14 +8,14 @@ import org.bukkit.inventory.ItemStack
 interface ItemFactory {
     fun create(
         type: String,
-        name: net.kyori.adventure.text.Component?,
-        description: List<net.kyori.adventure.text.Component>?
+        name: net.kyori.adventure.text.Component? = null,
+        description: List<net.kyori.adventure.text.Component>? = null
     ): ItemStack
 
     fun create(
         item: ItemStack,
-        name: net.kyori.adventure.text.Component?,
-        description: List<net.kyori.adventure.text.Component>?
+        name: net.kyori.adventure.text.Component? = null,
+        description: List<net.kyori.adventure.text.Component>? = null
     ): ItemStack
 }
 
@@ -68,7 +68,7 @@ class TestItemFactory: ItemFactory {
         name: net.kyori.adventure.text.Component?,
         description: List<net.kyori.adventure.text.Component>?
     ): ItemStack {
-        return item
+        return TestItemStack(item.type)
     }
 }
 

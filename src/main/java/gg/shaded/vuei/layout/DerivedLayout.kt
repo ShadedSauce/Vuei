@@ -29,9 +29,12 @@ class DerivedLayout(
     )
 
     override fun allocate(context: LayoutContext): Observable<List<Renderable>> {
-        val layout =
-            layouts[this.layout] ?: CustomComponentLayout(this.layout)
+        val layout = layouts[this.layout] ?: CustomComponentLayout(this.layout)
 
         return layout.allocate(context)
+    }
+
+    override fun toString(): String {
+        return "DerivedLayout(name=$layout)"
     }
 }

@@ -31,4 +31,8 @@ class ClickableLayout(
             }
         }
     }
+
+    override fun toString(): String {
+        return "IfLayout(layout=$layout)"
+    }
 }

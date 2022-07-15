@@ -28,12 +28,6 @@ class PaddingLayout: Layout {
             ?: context.getAttributeBinding("a")?.observe()
             ?: Observable.just(0)
 
-        val container = SimpleRenderable(
-            width = context.parent.width,
-            height = 0,
-            element = context.element
-        )
-
         return Observable.combineLatest(left, top, right, bottom) { l, t, r, b ->
             Padding(
                 l.toString().toInt(),
@@ -58,7 +52,7 @@ class PaddingLayout: Layout {
                         SimpleRenderable(
                             x = padding.l,
                             y = padding.t,
-                            width = container.width,
+                            width = context.parent.width,
                             height = height + padding.b,
                             element = context.element,
                             children = children,
