@@ -2,6 +2,9 @@ package gg.shaded.vuei
 
 import gg.shaded.vuei.layout.LayoutContext
 import gg.shaded.vuei.layout.SimpleLayoutContext
+import gg.shaded.vuei.theme.DefaultTheme
+import gg.shaded.vuei.theme.WindowTheme
+import gg.shaded.vuei.util.JoinClassLoader
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Scheduler
@@ -35,23 +38,13 @@ open class ComponentWindow(
     private val inventoryProvider: InventoryProvider = CachedInventoryProvider(),
     private val renderer: Renderer = InventoryRenderer(inventoryProvider),
     private val mainScheduler: Scheduler = Schedulers.from { r -> Bukkit.getScheduler().runTask(plugin, r) },
+    private val theme: WindowTheme = DefaultTheme(),
     private val errorHandler: ErrorHandler,
-    private val root: Component
+    private val root: Component,
 ): Window, Listener {
     private var document: Element = root.template.elements.first()
 
     protected open var renderable: Renderable? = null
-        set(value) {
-            field = value
-
-            if(value != null) {
-                renderer.render(value)
-
-                ignoreClose = true
-                viewers.forEach { it.openInventory(inventory) }
-                ignoreClose = false
-            }
-        }
 
     protected open val inventory: Inventory
         get() {
@@ -67,10 +60,15 @@ open class ComponentWindow(
     private var ignoreClose: Boolean = false
     private val contexts = HashSet<LayoutContext>()
 
+    private val classLoader = JoinClassLoader(
+        ClassLoader.getSystemClassLoader(),
+        plugin.javaClass.classLoader
+    )
+
     private val uiScheduler = Schedulers.from(
         Executors.newSingleThreadExecutor { r ->
             thread(
-                contextClassLoader = ClassLoader.getSystemClassLoader(),
+                contextClassLoader = classLoader,
                 name = "Component Window UI Thread",
                 start = false
             ) {
@@ -112,24 +110,32 @@ open class ComponentWindow(
         }
             .switchMap { bindings ->
                 document.layout.allocate(createLayoutContext(
-                    this.jsContext ?: createJavaScriptContext(Engine.create())
+                    this.jsContext ?: createJavaScriptContext(
+                        Engine.create(), classLoader
+                    )
                         .also { this.jsContext = it },
                     bindings
                 ))
             }
-            .subscribeOn(uiScheduler)
-            .debounce(50, TimeUnit.MILLISECONDS, uiScheduler) // 1 tick
             .map { it.first() }
+            .doOnNext { renderable -> this.renderable = renderable }
+            .debounce(50, TimeUnit.MILLISECONDS, uiScheduler) // 1 tick
+            .subscribeOn(uiScheduler)
             .observeOn(mainScheduler)
-            .subscribe(
-                { renderable -> this.renderable = renderable },
-                { t ->
-                    errorHandler.handle(t, viewers)
-                    // Prevent CME
-                    ArrayList(viewers).forEach { it.closeInventory() }
-                    dispose()
-                }
-            )
+            .subscribe(this::redraw) { t ->
+                errorHandler.handle(t, viewers)
+                // Prevent CME
+                ArrayList(viewers).forEach { it.closeInventory() }
+                dispose()
+            }
+    }
+
+    private fun redraw(renderable: Renderable) {
+        renderer.render(renderable)
+
+        ignoreClose = true
+        viewers.forEach { it.openInventory(inventory) }
+        ignoreClose = false
     }
 
     private fun createLayoutContext(jsContext: Context, bindings: Map<String, Any?>) =
@@ -147,7 +153,8 @@ open class ComponentWindow(
             slots = HashMap(),
             uiScheduler,
             backgroundScheduler,
-            errorHandler
+            errorHandler,
+            theme
         ).also { contexts.add(it) }
 
     private fun triggerClick(
@@ -197,16 +204,15 @@ open class ComponentWindow(
 
         cancellable.isCancelled = true
 
-        scheduleClick(context, layout, x, y)
+        scheduleClick(context, x, y)
     }
 
     protected open fun scheduleClick(
         context: ClickContext,
-        renderable: Renderable,
         x: Int,
         y: Int
     ) {
-        Completable.fromAction { renderable.click(x, y, context) }
+        Completable.fromAction { renderable?.click(x, y, context) }
             .subscribeOn(uiScheduler)
             .subscribe(
                 {},
@@ -218,6 +224,8 @@ open class ComponentWindow(
         contexts.forEach(AutoCloseable::close)
         jsContext?.close(true)
         subscription?.dispose()
+        uiScheduler.shutdown()
+        backgroundScheduler.shutdown()
         HandlerList.unregisterAll(this)
     }
 

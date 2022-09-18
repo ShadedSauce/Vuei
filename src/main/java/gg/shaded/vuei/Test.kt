@@ -5,6 +5,8 @@ import com.destroystokyo.paper.Title
 import com.destroystokyo.paper.block.TargetBlockInfo
 import com.destroystokyo.paper.entity.TargetEntityInfo
 import gg.shaded.vuei.*
+import gg.shaded.vuei.theme.DefaultTheme
+import gg.shaded.vuei.theme.WindowTheme
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Scheduler
 import io.reactivex.rxjava3.schedulers.Schedulers
@@ -317,9 +319,6 @@ class TestInventory(
     val items: Array<ItemStack?> = (0 until renderable.height * 9)
         .map { null }
         .toTypedArray()
-
-    val title: String?
-        get() = renderable.title
 
     override fun iterator(): MutableListIterator<ItemStack> {
         TODO("Not yet implemented")
@@ -2606,6 +2605,7 @@ class TestWindow(
     inventoryProvider: InventoryProvider = TestInventoryProvider(),
     renderer: Renderer = InventoryRenderer(inventoryProvider),
     scheduler: Scheduler = Schedulers.single(),
+    theme: WindowTheme = DefaultTheme(),
     root: Component,
     errorHandler: ErrorHandler = ErrorHandler { t, _ -> t.printStackTrace() },
     private val callback: ((TestWindow, Inventory, Renderable) -> Unit)? = null
@@ -2615,6 +2615,7 @@ class TestWindow(
     inventoryProvider,
     renderer,
     scheduler,
+    theme,
     errorHandler,
     root,
 ) {
@@ -2643,11 +2644,11 @@ class TestWindow(
         )
     }
 
-    override fun scheduleClick(context: ClickContext, renderable: Renderable, x: Int, y: Int) {
-        renderable.click(x, y, context)
+    override fun scheduleClick(context: ClickContext, x: Int, y: Int) {
+        renderable?.click(x, y, context)
     }
 
-    fun awaitRedraw(timeout: Long = 2000L) {
+    fun awaitRedraw(timeout: Long = 5000L) {
         val old = this.renderable
         var elapsed = 0L
 

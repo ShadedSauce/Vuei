@@ -1,6 +1,7 @@
 package gg.shaded.vuei.layout
 
 import gg.shaded.vuei.*
+import gg.shaded.vuei.theme.WindowTheme
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Maybe
 import io.reactivex.rxjava3.core.Observable
@@ -35,6 +36,8 @@ interface LayoutContext: AutoCloseable {
 
     val errorHandler: ErrorHandler
 
+    val theme: WindowTheme
+
     fun copy(
         superContext: LayoutContext? = null,
         jsContext: Context? = null,
@@ -45,7 +48,8 @@ interface LayoutContext: AutoCloseable {
         slots: Map<String, List<Element>>? = null,
         uiScheduler: Scheduler? = null,
         backgroundScheduler: Scheduler? = null,
-        errorHandler: ErrorHandler? = null
+        errorHandler: ErrorHandler? = null,
+        theme: WindowTheme? = null
     ): LayoutContext
 
     fun getAttributeBinding(key: String): Any? {
@@ -72,7 +76,8 @@ class SimpleLayoutContext(
     override val slots: Map<String, List<Element>>,
     override val uiScheduler: Scheduler,
     override val backgroundScheduler: Scheduler,
-    override val errorHandler: ErrorHandler
+    override val errorHandler: ErrorHandler,
+    override val theme: WindowTheme
 ): LayoutContext {
     private val closeables = HashSet<AutoCloseable>()
     private val children = HashSet<LayoutContext>()
@@ -92,7 +97,8 @@ class SimpleLayoutContext(
         slots: Map<String, List<Element>>?,
         uiScheduler: Scheduler?,
         backgroundScheduler: Scheduler?,
-        errorHandler: ErrorHandler?
+        errorHandler: ErrorHandler?,
+        theme: WindowTheme?
     ): LayoutContext {
         return SimpleLayoutContext(
             superContext ?: this.superContext,
@@ -104,14 +110,29 @@ class SimpleLayoutContext(
             slots ?: this.slots,
             uiScheduler ?: this.uiScheduler,
             backgroundScheduler ?: this.backgroundScheduler,
-            errorHandler ?: this.errorHandler
+            errorHandler ?: this.errorHandler,
+            theme ?: this.theme
         ).also { children.add(it) }
     }
 
     override fun getBinding(binding: String): Any? {
+        // TODO: Should probably have an interface for executing scripts
         val result = try {
             val bindings = this.bindings.filterKeys { !it.contains(":") }
-            val callable = jsContext.eval("js", "(${bindings.keys.joinToString()}) => $binding")
+                .plus("theme" to theme)
+
+            // Graal doesn't initialze it for some reason.
+            Class.forName(
+                "net.kyori.adventure.text.Component",
+                true,
+                Thread.currentThread().contextClassLoader
+            )
+
+            val callable = jsContext.eval("js", """
+                var Component = Java.type('net.kyori.adventure.text.Component');
+                
+                (${bindings.keys.joinToString()}) => $binding
+            """)
 
             callable.execute(*bindings.values.toTypedArray()).unwrap()
         } catch(e: Exception) {

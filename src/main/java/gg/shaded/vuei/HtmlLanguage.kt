@@ -2,6 +2,7 @@ package gg.shaded.vuei
 
 import gg.shaded.vuei.layout.*
 import io.reactivex.rxjava3.core.Observable
+import net.kyori.adventure.text.Component
 import org.graalvm.polyglot.Context
 import org.graalvm.polyglot.Engine
 import org.graalvm.polyglot.HostAccess
@@ -182,6 +183,14 @@ fun Any.observe() = if(this is Observable<*>)
     this.map { it.unwrap() ?: throw IllegalStateException("Expecting non null value.") }
     else Observable.just(this.unwrap() ?: throw IllegalStateException("Expecting non null value."))
 
+fun Any.translate(): Component {
+    return when (this) {
+        is String -> Component.translatable(this)
+        is Component -> this
+        else -> throw IllegalArgumentException("$this not translatable.")
+    }
+}
+
 private val hostAccess = HostAccess.newBuilder(HostAccess.ALL)
     .targetTypeMapping(
         Value::class.java,
@@ -190,9 +199,12 @@ private val hostAccess = HostAccess.newBuilder(HostAccess.ALL)
     ) { v -> ArrayList(v.`as`(List::class.java)) }
     .build()
 
-fun createJavaScriptContext(engine: Engine): Context =
+fun createJavaScriptContext(engine: Engine, classLoader: ClassLoader): Context =
     Context.newBuilder("js")
         .engine(engine)
         .allowAllAccess(true)
         .allowHostAccess(hostAccess)
+        .allowHostClassLoading(true)
+        .allowHostClassLookup { true }
+        .hostClassLoader(classLoader)
         .build()

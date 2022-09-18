@@ -43,7 +43,7 @@ class CustomComponentLayout(
                 prop.name to validated
             }
             .plus(
-                context.element.values.mapValues { Observable.just(it.value) }
+                context.element.values.mapValues { it.value }
             )
 
         return component.setupWithQueue(

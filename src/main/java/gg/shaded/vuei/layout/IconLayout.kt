@@ -53,6 +53,7 @@ class IconLayout(
     private fun translate(any: Any): net.kyori.adventure.text.Component {
         return when (any) {
             is String -> i18n.translate(any)
+            is net.kyori.adventure.text.Component -> any
             is List<*> -> {
                 i18n.translate(
                     any.first() as String,

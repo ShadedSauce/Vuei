@@ -21,11 +21,12 @@ class DerivedLayout(
         "col-s" to ColumnStartLayout(),
         "col-c" to ColumnCenterLayout(),
         "icon" to IconLayout(itemFactory, i18n),
+        "fill" to FillLayout(itemFactory, i18n),
         "padding" to PaddingLayout(),
         "slot" to SlotLayout(),
         "template" to TemplateLayout(),
         "wrap" to WrapLayout(),
-        "sized-box" to SizedBoxLayout()
+        "sized-box" to SizedBoxLayout(),
     )
 
     override fun allocate(context: LayoutContext): Observable<List<Renderable>> {

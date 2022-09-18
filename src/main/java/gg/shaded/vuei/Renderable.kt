@@ -1,5 +1,6 @@
 package gg.shaded.vuei
 
+import net.kyori.adventure.text.Component
 import org.bukkit.inventory.ItemStack
 
 interface Renderable {
@@ -10,7 +11,7 @@ interface Renderable {
     val element: Element
     val children: List<Renderable>
     val item: ItemStack?
-    val title: String?
+    val title: Component?
     val onClick: ((ClickContext) -> Unit)?
 
     fun click(
@@ -27,7 +28,7 @@ interface Renderable {
         element: Element? = null,
         children: List<Renderable>? = null,
         item: ItemStack? = null,
-        title: String? = null,
+        title: Component? = null,
         onClick: ((ClickContext) -> Unit)? = null
     ): Renderable
 
@@ -42,7 +43,7 @@ data class SimpleRenderable(
     override val element: Element,
     override val children: List<Renderable> = ArrayList(),
     override val item: ItemStack? = null,
-    override val title: String? = null,
+    override val title: Component? = null,
     override val onClick: ((ClickContext) -> Unit)? = null,
 ): Renderable {
     override fun click(
@@ -69,8 +70,8 @@ data class SimpleRenderable(
                 )
             }
 
-        if(!consumed) {
-            onClick?.invoke(context)
+        if(!consumed && onClick != null) {
+            onClick.invoke(context)
             return true
         }
 
@@ -85,7 +86,7 @@ data class SimpleRenderable(
         element: Element?,
         children: List<Renderable>?,
         item: ItemStack?,
-        title: String?,
+        title: Component?,
         onClick: ((ClickContext) -> Unit)?
     ) = SimpleRenderable(
         x ?: this.x,

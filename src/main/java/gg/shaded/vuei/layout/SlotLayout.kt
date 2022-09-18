@@ -12,7 +12,8 @@ class SlotLayout: Layout {
 
         return templates.allocate(
             context.copy(
-                bindings = superContext.bindings
+                bindings = superContext.bindings,
+                components = superContext.components
             )
         )
     }
